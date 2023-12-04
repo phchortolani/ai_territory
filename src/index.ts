@@ -11,7 +11,7 @@ import statusTerritoryRoutes from './routes/statusTerritoryRoutes';
 import { StatusTerritoryService } from './services/statusTerritoryService';
 
 const server = fastify()
-const port = 3333;
+const port = process.env.PORT ?? 3333;
 
 TerritoryRoutes(server, new TerritoryService());
 LeadersRoutes(server, new LeadersService());
@@ -19,7 +19,7 @@ RoundsRoutes(server, new RoundsService())
 CampaignRoutes(server, new CampaignService())
 statusTerritoryRoutes(server, new StatusTerritoryService())
 
-server.listen({ port }, (err, address) => {
+server.listen({ port: Number(port) }, (err, address) => {
     if (err) {
         console.error(err)
         process.exit(1)
