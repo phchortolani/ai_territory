@@ -19,7 +19,10 @@ RoundsRoutes(server, new RoundsService())
 CampaignRoutes(server, new CampaignService())
 statusTerritoryRoutes(server, new StatusTerritoryService())
 
-server.listen({ port: Number(port) }, (err, address) => {
+server.listen({
+    port: Number(port),
+    host: '0.0.0.0'
+}, (err, address) => {
     if (err) {
         console.error(err)
         process.exit(1)
