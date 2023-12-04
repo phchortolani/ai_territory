@@ -4,6 +4,7 @@ export interface Rounds {
     last_day?: Date;
     expected_return: Date;
     leader: number; //fk de leaders
-    campaign: number; //fk de campaign
+    campaign?: number; //fk de campaign
     status: number; //fk de status_territory 
+    territory_id: number
 }

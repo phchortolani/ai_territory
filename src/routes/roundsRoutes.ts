@@ -1,6 +1,8 @@
 import { FastifyInstance } from 'fastify';
 import { RoundsService } from '../services/roundsService';
 import { Rounds } from '../models/rounds';
+import { Campaign } from '../models/campaign';
+import { ISchedule } from '../dtos/schedule';
 
 const path = '/rounds'
 
@@ -35,7 +37,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
             const rounds = await RoundsService.list(id);
             return reply.status(200).send(rounds)
         } catch (err) {
-            return reply.status(500).send()
+            return reply.status(500).send(err)
         }
 
     })
@@ -53,8 +55,27 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
             if (MarkedAsDoneResult) return reply.status(204).send()
             return reply.status(502).send(`Não foi possível atualizar a rodada.`)
         } catch (err) {
-            return reply.status(500).send()
+            return reply.status(500).send(err)
         }
 
     })
+
+    server.post(`${path}/schedule/:leader_id`, async (request, reply) => {
+        try {
+            const { leader_id } = request.params as any
+            if (!leader_id) return reply.status(400).send('Para atualizar a rodada é necessário informar o leader_id no URI')
+            const schedule = request.body as ISchedule
+            if (!schedule) return reply.status(400).send('Para atualizar a rodada é necessário informar o array de numeros na propriedade "MarkAsDone"')
+            const ScheduleResult = await RoundsService.ToSchedule(schedule, leader_id);
+
+            if (ScheduleResult) return reply.status(204).send()
+            return reply.status(502).send(`Não foi possível agendar esses territórios.`)
+        } catch (err) {
+            return reply.status(400).send(err)
+        }
+
+    })
+
+
+
 }
