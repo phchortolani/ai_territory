@@ -1,0 +1,22 @@
+{
+  "name": "ai_territory",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Paulo Henrique <phchortolani@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.2.2"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node src/index.js",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts"
+  },
+  "dependencies": {
+    "@types/node": "^20.8.10",
+    "dotenv": "^16.3.1",
+    "fastify": "^4.24.3",
+    "postgres": "^3.4.3"
+  }
+}
