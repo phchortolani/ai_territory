@@ -45,7 +45,8 @@ export class RoundsService<T = Rounds> extends Database<T> {
             const DataInRange = rounds.filter(x =>
                 moment(x.first_day).isSame(new Date(schedule.first_day)) ||
                 moment(x.last_day).isSame(last_day) ||
-                moment(x.last_day).isSameOrAfter(new Date(schedule.first_day)))
+                moment(x.last_day).isSameOrAfter(new Date(schedule.first_day))
+                || x.status == 2)
                 .map(x => x.territory_id)
 
 
