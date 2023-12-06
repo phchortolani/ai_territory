@@ -56,15 +56,18 @@ export class RoundsService<T = Rounds> extends Database<T> {
             }
 
             const ToScheduleRounds = schedule.territories?.map(territory_id => {
-                return {
+                const obj = {
                     territory_id,
                     first_day: schedule.first_day,
                     leader: leader_id,
                     expected_return,
                     last_day,
-                    status: 2,
-                    campaign: schedule.campaign_id
+                    status: 2
                 } as Rounds
+                if (schedule.campaign_id) {
+                    obj.campaign = schedule.campaign_id
+                }
+                return obj
             })
 
             if (ToScheduleRounds && ToScheduleRounds.length > 0) {
