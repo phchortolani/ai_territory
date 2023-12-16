@@ -33,10 +33,23 @@ export default function TerritoryRoutes(server: FastifyInstance, territoryServic
         try {
             const { id } = request.params as any;
             const territorys = await territoryService.list(id);
-            return reply.status(200).send(territorys)
+            return reply.status(200).send(territorys.sort((a, b) => a.id - b.id))
         } catch (err) {
             return reply.status(500).send()
         }
-
     })
+    server.get(`${path}/getFullTerritoriesList`, async (request, reply) => {
+        try {
+            const { id } = request.params as any;
+            const ret = await Promise.all([territoryService.list(id), territoryService.getAllAndress()])
+
+            return reply.status(200).send({
+                territories: ret[0].sort((a, b) => a.id - b.id),
+                andressList: ret[1]
+            })
+        } catch (err) {
+            return reply.status(500).send()
+        }
+    })
+
 }

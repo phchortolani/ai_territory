@@ -76,6 +76,24 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
 
     })
 
+    /*  server.get(`${path}/:id?`, async (request, reply) => {
+         try {
+             const { id } = request.params as any;
+             const rounds = await RoundsService.list(id);
+             return reply.status(200).send(rounds)
+         } catch (err) {
+             return reply.status(500).send(err)
+         }
+ 
+     }) */
 
+    server.get(`${path}/getReturnSolicitation`, async (request, reply) => {
+        try {
+            const ret = await RoundsService.getReturnSolicitation()
+            return reply.status(200).send(ret)
+        } catch (err) {
+            return reply.status(500).send()
+        }
+    })
 
 }

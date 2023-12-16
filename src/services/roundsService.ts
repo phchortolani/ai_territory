@@ -3,7 +3,8 @@ import { Database } from "../database/Database";
 import sql from "../database/sql";
 import { ISchedule } from "../dtos/schedule";
 import { Rounds } from "../models/rounds";
-
+import { ReturnSolicitationDto } from "../dtos/returnSolicitation";
+import 'moment/locale/pt-br';
 
 export class RoundsService<T = Rounds> extends Database<T> {
 
@@ -84,6 +85,52 @@ export class RoundsService<T = Rounds> extends Database<T> {
         }
     }
 
+    async getReturnSolicitation() {
+        try {
+            const data: { first_day: Date, last_day: Date, leader_id: number, leader_name: string, territory_id: number }[] = await sql`select first_day, last_day ,l.id as leader_id, l."name" as leader_name, territory_id  from rounds r
+            join leaders l on l.id = r.leader  
+            where expected_return <= current_date and status = 2 order by first_day`
+
+            const devolution_list_leaders = data.map(x => x.leader_id).reduce((acc: number[], curr: number) => {
+                if (!acc.some(dado => dado == curr)) {
+                    acc.push(curr)
+                }
+                return acc
+            }, [])
+            const devolution_list: ReturnSolicitationDto[] = []
+
+            devolution_list_leaders.forEach(leader_id => {
+                const devolutions = data.filter(d => d.leader_id == leader_id)
+
+                devolutions.forEach(devolution => {
+
+                    if (devolution_list.some(a => a.leader.id == devolution.leader_id && moment(devolution.first_day).isSame(a.first_day))) {
+                        const current_devolution_index = devolution_list.findIndex(a => a.leader.id == leader_id && moment(devolution.first_day).isSame(a.first_day))
+                        devolution_list[current_devolution_index]?.territories.push({ id: devolution.territory_id })
+
+                    } else {
+                        devolution_list.push({
+                            leader: {
+                                id: devolution.leader_id,
+                                name: devolution.leader_name
+                            },
+                            first_day: devolution.first_day,
+                            last_day: devolution.last_day,
+                            day: moment(devolution.first_day).format('dddd'),
+                            territories: [{
+                                id:
+                                    devolution.territory_id
+                            }]
+                        })
+                    }
+                })
+            })
+            return devolution_list
+
+        } catch (err) {
+            throw err
+        }
+    }
 
 
 }
