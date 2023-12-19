@@ -105,12 +105,16 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
                 let formattedData = '';
 
                 data.forEach((entry) => {
-                    formattedData += `Olá ${entry.leader.name}, tudo bom?\n`;
-                    formattedData += `Poderia me passar um retorno informando quais dos territórios abaixo foram trabalhados?\n\n`;
+                    const leaderName = entry.leader.name.toLowerCase().charAt(0).toUpperCase() + entry.leader.name.slice(1).toLocaleLowerCase();
+
+                    formattedData += `Olá ${leaderName}, tudo bom?\n`;
+                    formattedData += `Poderia me passar um retorno informando quais dos territórios abaixo foram trabalhados, por favor?\n\n`;
 
                     entry.devolutions.forEach((devolution) => {
-                        formattedData += `*${devolution.day}* - 1ª Saída: *${moment(devolution.first_day).utc().format('DD-MM-YYYY')}* | 2ª Saída: *${moment(devolution.last_day).utc().format('DD-MM-YYYY')}*\n`;
-                        formattedData += `Territórios: ${devolution.territories.map((territory) => territory.id).join(', ')}\n `;
+                        const day = devolution.day.toLowerCase().charAt(0).toUpperCase() + devolution.day.slice(1);
+
+                        formattedData += `*${day}* - 1ª Saída: *${moment(devolution.first_day).utc().format('DD-MM-YYYY')}* | 2ª Saída: *${moment(devolution.last_day).utc().format('DD-MM-YYYY')}*\n`;
+                        formattedData += `Territórios: *${devolution.territories.map((territory) => territory.id).join(', ')}*\n `;
                         formattedData += '----\n';
                     });
 
