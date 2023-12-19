@@ -100,27 +100,49 @@ export class RoundsService<T = Rounds> extends Database<T> {
             const devolution_list: ReturnSolicitationDto[] = []
 
             devolution_list_leaders.forEach(leader_id => {
+
+
                 const devolutions = data.filter(d => d.leader_id == leader_id)
 
                 devolutions.forEach(devolution => {
 
-                    if (devolution_list.some(a => a.leader.id == devolution.leader_id && moment(devolution.first_day).isSame(a.first_day))) {
-                        const current_devolution_index = devolution_list.findIndex(a => a.leader.id == leader_id && moment(devolution.first_day).isSame(a.first_day))
-                        devolution_list[current_devolution_index]?.territories.push({ id: devolution.territory_id })
+                    if (devolution_list.some(a => a.leader.id == devolution.leader_id)) {
 
+                        const current_devolution_index = devolution_list.findIndex(a => a.leader.id == leader_id && a.devolutions.some(x => moment(devolution.first_day).isSame(x.first_day)))
+                        const current_devolution = devolution_list[current_devolution_index]?.devolutions.find(x => moment(devolution.first_day).isSame(x.first_day))
+
+                        if (current_devolution) {
+                            current_devolution.territories.push({ id: devolution.territory_id })
+                        } else {
+
+                            devolution_list.find(a => a.leader.id == devolution.leader_id)?.devolutions.push({
+                                first_day: devolution.first_day,
+                                last_day: devolution.last_day,
+                                day: moment(devolution.first_day).utc().format('dddd'),
+                                territories: [{
+                                    id:
+                                        devolution.territory_id
+                                }]
+
+                            })
+                        }
                     } else {
+
                         devolution_list.push({
                             leader: {
                                 id: devolution.leader_id,
                                 name: devolution.leader_name
                             },
-                            first_day: devolution.first_day,
-                            last_day: devolution.last_day,
-                            day: moment(devolution.first_day).format('dddd'),
-                            territories: [{
-                                id:
-                                    devolution.territory_id
+                            devolutions: [{
+                                first_day: devolution.first_day,
+                                last_day: devolution.last_day,
+                                day: moment(devolution.first_day).utc().format('dddd'),
+                                territories: [{
+                                    id:
+                                        devolution.territory_id
+                                }]
                             }]
+
                         })
                     }
                 })

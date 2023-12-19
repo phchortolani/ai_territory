@@ -3,6 +3,8 @@ import { RoundsService } from '../services/roundsService';
 import { Rounds } from '../models/rounds';
 import { Campaign } from '../models/campaign';
 import { ISchedule } from '../dtos/schedule';
+import { ReturnSolicitationDto } from '../dtos/returnSolicitation';
+import moment from 'moment';
 
 const path = '/rounds'
 
@@ -91,6 +93,34 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
         try {
             const ret = await RoundsService.getReturnSolicitation()
             return reply.status(200).send(ret)
+        } catch (err) {
+            return reply.status(500).send()
+        }
+    })
+    server.get(`${path}/Whatsapp/Devolution`, async (request, reply) => {
+        try {
+            const ret = await RoundsService.getReturnSolicitation()
+
+            function formatDevolutionData(data: ReturnSolicitationDto[]): string {
+                let formattedData = '';
+
+                data.forEach((entry) => {
+                    formattedData += `Olá ${entry.leader.name}, tudo bom?\n`;
+                    formattedData += `Poderia me passar um retorno informando quais dos territórios abaixo foram trabalhados?\n\n`;
+
+                    entry.devolutions.forEach((devolution) => {
+                        formattedData += `*${devolution.day}* - 1ª Saída: *${moment(devolution.first_day).utc().format('DD-MM-YYYY')}* | 2ª Saída: *${moment(devolution.last_day).utc().format('DD-MM-YYYY')}*\n`;
+                        formattedData += `Territórios: ${devolution.territories.map((territory) => territory.id).join(', ')}\n `;
+                        formattedData += '----\n';
+                    });
+
+                    formattedData += '\n';
+                });
+
+                return formattedData;
+            }
+
+            return reply.status(200).send(formatDevolutionData(ret))
         } catch (err) {
             return reply.status(500).send()
         }
