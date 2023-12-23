@@ -36,7 +36,12 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
     async ToSchedule(schedule: ISchedule, leader_id: number) {
         try {
-            const last_day = moment(schedule.first_day).add(7, 'days').toDate();
+            let last_day: Date | null = moment(schedule.first_day).toDate();
+            
+            if(moment(schedule.first_day).isoWeekday() !== 6){
+                last_day = moment(schedule.first_day).add(7, 'days').toDate();
+            }
+           
             const expected_return = last_day;
 
             if (schedule.territories?.some(x => x == 0)) throw new Error('O agendamento possui territórios com o ID 0');
