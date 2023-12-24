@@ -37,11 +37,11 @@ export class RoundsService<T = Rounds> extends Database<T> {
     async ToSchedule(schedule: ISchedule, leader_id: number) {
         try {
             let last_day: Date | null = moment(schedule.first_day).toDate();
-            
-            if(moment(schedule.first_day).isoWeekday() !== 6){
+
+            if (moment(schedule.first_day).isoWeekday() !== 6) {
                 last_day = moment(schedule.first_day).add(7, 'days').toDate();
             }
-           
+
             const expected_return = last_day;
 
             if (schedule.territories?.some(x => x == 0)) throw new Error('O agendamento possui territórios com o ID 0');
@@ -78,12 +78,25 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
             if (ToScheduleRounds && ToScheduleRounds.length > 0) {
                 console.log('Efetuando o agendamento...')
-                const created = await sql`insert into ${sql(this.table)} ${sql(ToScheduleRounds)}`
-                console.log(`${created.count} Territórios agendados a partir de ${moment(schedule.first_day).format("DD-MM-YYYY")} ✅ 🎉`)
-                return created.count > 0
+                const RoundsCreated: Rounds[] = await sql`insert into ${sql(this.table)} ${sql(ToScheduleRounds)} RETURNING *`
+
+                if(!!RoundsCreated){
+                    console.log(`${RoundsCreated?.length ?? 0} Territórios agendados a partir de ${moment(schedule.first_day).format("DD-MM-YYYY")} ✅ 🎉`)
+                   
+                    const day =moment(schedule.first_day).utc().format('dddd').toLowerCase().charAt(0).toUpperCase() + moment(schedule.first_day).utc().format('dddd').slice(1);
+                    
+                    let formattedData = `*${day}*\n`
+
+                    formattedData += `1ª Saída: *${moment(RoundsCreated[0].first_day).utc().format('DD-MM-YYYY')}* | 2ª Saída: *${moment(RoundsCreated[0].last_day).utc().format('DD-MM-YYYY')}*\n`;
+                    formattedData += `Territórios: *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n `;
+                    formattedData += '----\n';
+                    return formattedData
+                }
+                console.log('Nenhuma rodada criada! 🙈❌')
+                return null
             }
 
-            return false;
+            return null;
 
         } catch (err) {
             throw err

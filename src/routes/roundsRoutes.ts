@@ -70,7 +70,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
             if (!schedule) return reply.status(400).send('Para atualizar a rodada é necessário informar o array de numeros na propriedade "MarkAsDone"')
             const ScheduleResult = await RoundsService.ToSchedule(schedule, leader_id);
 
-            if (ScheduleResult) return reply.status(204).send()
+            if (ScheduleResult) return reply.status(200).send(ScheduleResult)
             return reply.status(502).send(`Não foi possível agendar esses territórios.`)
         } catch (err) {
             return reply.status(400).send(err)
@@ -115,7 +115,6 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
 
                         formattedData += `*${day}* - 1ª Saída: *${moment(devolution.first_day).utc().format('DD-MM-YYYY')}* | 2ª Saída: *${moment(devolution.last_day).utc().format('DD-MM-YYYY')}*\n`;
                         formattedData += `Territórios: *${devolution.territories.map((territory) => territory.id).join(', ')}*\n `;
-                        formattedData += '----\n';
                     });
 
                     formattedData += '\n';
