@@ -44,6 +44,18 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
 
     })
 
+    server.get(`${path}/schedule/:status?`, async (request, reply) => {
+        try {
+            const { status } = request.params as any;
+            let rounds = await RoundsService.getScheduleByStatus(status);
+
+            return reply.status(200).send(rounds)
+        } catch (err) {
+            return reply.status(500).send(err)
+        }
+
+    })
+
     server.post(`${path}/markasdone/:leader_id`, async (request, reply) => {
         try {
             const { leader_id } = request.params as any

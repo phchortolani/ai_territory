@@ -34,6 +34,24 @@ export class RoundsService<T = Rounds> extends Database<T> {
         }
     }
 
+    async getScheduleByStatus(status: string) {
+        try {
+
+            if (status?.length > 2) return
+
+            const Schedule = await sql`select r.first_day, r.last_day ,r.expected_return ,l."name" as leader,c."name" as campaign, territory_id 
+            from rounds r 
+            left join leaders l on l.id = r.leader 
+            left join campaign c on c.id  = r.campaign 
+            where status is not null ${status ? sql`and status = ${status}` : sql``}`;
+
+            return Schedule;
+        } catch (err) {
+            console.log(err)
+            throw err
+        }
+    }
+
     async ToSchedule(schedule: ISchedule, leader_id: number) {
         try {
             let last_day: Date | null = moment(schedule.first_day).toDate();
@@ -80,11 +98,11 @@ export class RoundsService<T = Rounds> extends Database<T> {
                 console.log('Efetuando o agendamento...')
                 const RoundsCreated: Rounds[] = await sql`insert into ${sql(this.table)} ${sql(ToScheduleRounds)} RETURNING *`
 
-                if(!!RoundsCreated){
+                if (!!RoundsCreated) {
                     console.log(`${RoundsCreated?.length ?? 0} Territórios agendados a partir de ${moment(schedule.first_day).format("DD-MM-YYYY")} ✅ 🎉`)
-                   
-                    const day =moment(schedule.first_day).utc().format('dddd').toLowerCase().charAt(0).toUpperCase() + moment(schedule.first_day).utc().format('dddd').slice(1);
-                    
+
+                    const day = moment(schedule.first_day).utc().format('dddd').toLowerCase().charAt(0).toUpperCase() + moment(schedule.first_day).utc().format('dddd').slice(1);
+
                     let formattedData = `*${day}*\n`
 
                     formattedData += `1ª Saída: *${moment(RoundsCreated[0].first_day).utc().format('DD-MM-YYYY')}* | 2ª Saída: *${moment(RoundsCreated[0].last_day).utc().format('DD-MM-YYYY')}*\n`;
