@@ -49,6 +49,13 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
             const { status } = request.params as any;
             let rounds = await RoundsService.getScheduleByStatus(status);
 
+            rounds = rounds?.map(x => {
+                return {
+                    ...x, first_day: moment(x.first_day).add(4, 'hours').toDate(),
+                    last_day: moment(x.last_day ?? x.first_day).add(4, 'hours').toDate(),
+                    expected_return: moment(x.expected_return).add(4, 'hours').toDate()
+                }
+            })
             return reply.status(200).send(rounds)
         } catch (err) {
             return reply.status(500).send(err)

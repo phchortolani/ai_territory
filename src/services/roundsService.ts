@@ -5,6 +5,7 @@ import { ISchedule } from "../dtos/schedule";
 import { Rounds } from "../models/rounds";
 import { ReturnSolicitationDto } from "../dtos/returnSolicitation";
 import 'moment/locale/pt-br';
+import { RoundsDto } from "../dtos/roundsDto";
 
 export class RoundsService<T = Rounds> extends Database<T> {
 
@@ -39,10 +40,12 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
             if (status?.length > 2) return
 
-            const Schedule = await sql`select r.first_day, r.last_day ,r.expected_return ,l."name" as leader,c."name" as campaign, territory_id 
+            const Schedule: RoundsDto[] = await sql`select r.id, r.first_day, r.last_day ,r.expected_return ,l."name" as leader,c."name" as campaign, territory_id , 
+            st."name" as status
             from rounds r 
             left join leaders l on l.id = r.leader 
             left join campaign c on c.id  = r.campaign 
+            left join status_territory st on st.id = r.status 
             where status is not null ${status ? sql`and status = ${status}` : sql``}`;
 
             return Schedule;
