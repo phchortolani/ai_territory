@@ -34,6 +34,23 @@ export class RoundsService<T = Rounds> extends Database<T> {
             throw err
         }
     }
+    async MarkRoundAsDone(round_id: string, status: number) {
+        try {
+            console.log('Marcando a rodada: ' + round_id + ' como feita...')
+            
+            const markedAsDone = await sql`update ${sql(this.table)} set status = ${status} 
+            WHERE id = ${round_id}`;
+            console.log(markedAsDone.count + " linhas atualizadas")
+            if (markedAsDone.count > 0) {
+                console.log('Atualização de rodadas realizadas com sucesso! ✅🎉')
+            } else console.log('Nenhuma rodada atualizada.')
+
+            return markedAsDone.count > 0;
+        } catch (err) {
+            console.log(err)
+            throw err
+        }
+    }
 
     async getScheduleByStatus(status: string) {
         try {

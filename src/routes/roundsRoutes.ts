@@ -73,7 +73,23 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
             if (!body?.MarkAsDone) return reply.status(400).send('Para atualizar a rodada é necessário informar o array de numeros na propriedade "MarkAsDone"')
             const MarkedAsDoneResult = await RoundsService.MarkAsDone(body.MarkAsDone, leader_id);
 
-            if (MarkedAsDoneResult) return reply.status(204).send()
+            if (MarkedAsDoneResult) return reply.status(200).send(MarkedAsDoneResult)
+            return reply.status(502).send(`Não foi possível atualizar a rodada.`)
+        } catch (err) {
+            return reply.status(500).send(err)
+        }
+
+    })
+
+    server.post(`${path}/markRoundAsDone/:round_id`, async (request, reply) => {
+        try {
+            const { round_id } = request.params as any
+            const { status } = request.body as { status: number }
+
+            if (!round_id) return reply.status(400).send('Para atualizar a rodada é necessário informar o numero na propriedade "round_id"')
+            const MarkedAsDoneResult = await RoundsService.MarkRoundAsDone(round_id, status);
+
+            if (MarkedAsDoneResult) return reply.status(200).send(MarkedAsDoneResult)
             return reply.status(502).send(`Não foi possível atualizar a rodada.`)
         } catch (err) {
             return reply.status(500).send(err)

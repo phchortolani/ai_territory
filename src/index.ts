@@ -10,7 +10,19 @@ import { CampaignService } from './services/campaignService';
 import statusTerritoryRoutes from './routes/statusTerritoryRoutes';
 import { StatusTerritoryService } from './services/statusTerritoryService';
 
+import cors from '@fastify/cors'
+
 const server = fastify()
+
+server.register(cors, {
+    origin: (origin, cb) => {
+
+        cb(null, true);
+    },
+    methods: ['GET', 'PUT', 'POST', 'DELETE'],
+    credentials: true,
+});
+
 const port = process.env.PORT ?? 3333;
 
 TerritoryRoutes(server, new TerritoryService());
