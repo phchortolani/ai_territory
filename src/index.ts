@@ -11,6 +11,8 @@ import statusTerritoryRoutes from './routes/statusTerritoryRoutes';
 import { StatusTerritoryService } from './services/statusTerritoryService';
 
 import cors from '@fastify/cors'
+import AmandaRoutes from './routes/amandaRoutes';
+import { AmandaService } from './services/amandaService';
 
 const server = fastify()
 
@@ -30,6 +32,7 @@ LeadersRoutes(server, new LeadersService());
 RoundsRoutes(server, new RoundsService())
 CampaignRoutes(server, new CampaignService())
 statusTerritoryRoutes(server, new StatusTerritoryService())
+AmandaRoutes(server, new AmandaService())
 
 server.listen({
     port: Number(port),
