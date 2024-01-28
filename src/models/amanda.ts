@@ -4,4 +4,5 @@ export interface Amanda {
     ip: string | null;
     email: string | null;
     senha: string | null;
+    solicitante?: string | null;
 }
