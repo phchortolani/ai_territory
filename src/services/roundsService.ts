@@ -6,6 +6,7 @@ import { Rounds } from "../models/rounds";
 import { ReturnSolicitationDto } from "../dtos/returnSolicitation";
 import 'moment/locale/pt-br';
 import { RoundsDto } from "../dtos/roundsDto";
+import { S13 } from "../dtos/s13";
 
 export class RoundsService<T = Rounds> extends Database<T> {
 
@@ -37,7 +38,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
     async MarkRoundAsDone(round_id: string, status: number) {
         try {
             console.log('Marcando a rodada: ' + round_id + ' como feita...')
-            
+
             const markedAsDone = await sql`update ${sql(this.table)} set status = ${status} 
             WHERE id = ${round_id}`;
             console.log(markedAsDone.count + " linhas atualizadas")
@@ -66,6 +67,18 @@ export class RoundsService<T = Rounds> extends Database<T> {
             where status is not null ${status ? sql`and status = ${status}` : sql``}`;
 
             return Schedule;
+        } catch (err) {
+            console.log(err)
+            throw err
+        }
+    }
+
+    async getS13() {
+        try {
+
+            const s13: S13[] = await sql`select * from vw_base_s13`;
+
+            return s13;
         } catch (err) {
             console.log(err)
             throw err

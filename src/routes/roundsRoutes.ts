@@ -132,6 +132,15 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
             return reply.status(500).send()
         }
     })
+
+    server.get(`${path}/getS13`, async (request, reply) => {
+        try {
+            const ret = await RoundsService.getS13()
+            return reply.status(200).send(ret)
+        } catch (err) {
+            return reply.status(500).send()
+        }
+    })
     server.get(`${path}/Whatsapp/Devolution`, async (request, reply) => {
         try {
             const ret = await RoundsService.getReturnSolicitation()
