@@ -13,6 +13,8 @@ import { StatusTerritoryService } from './services/statusTerritoryService';
 import cors from '@fastify/cors'
 import AmandaRoutes from './routes/amandaRoutes';
 import { AmandaService } from './services/amandaService';
+import WhatsappRoutes from './routes/whatsappRoutes';
+import { WhatsappService } from './services/whatsappService';
 
 const server = fastify()
 
@@ -33,6 +35,7 @@ RoundsRoutes(server, new RoundsService())
 CampaignRoutes(server, new CampaignService())
 statusTerritoryRoutes(server, new StatusTerritoryService())
 AmandaRoutes(server, new AmandaService())
+WhatsappRoutes(server, new WhatsappService())
 
 server.listen({
     port: Number(port),

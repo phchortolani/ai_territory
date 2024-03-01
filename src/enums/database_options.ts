@@ -1,3 +1,3 @@
 export type database_options = {
-    table: "territories" | "leaders" | "rounds" | "status_territory" | "campaign" | "amanda"
+    table: "territories" | "leaders" | "rounds" | "status_territory" | "campaign" | "amanda" | 'whatsapp_challenge'
 }
