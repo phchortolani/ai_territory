@@ -6,7 +6,7 @@ import { Rounds } from "../models/rounds";
 import { ReturnSolicitationDto } from "../dtos/returnSolicitation";
 import 'moment/locale/pt-br';
 import { RoundsDto } from "../dtos/roundsDto";
-import { S13 } from "../dtos/s13";
+import { S13, S13_Item } from "../dtos/s13";
 
 export class RoundsService<T = Rounds> extends Database<T> {
 
@@ -76,9 +76,19 @@ export class RoundsService<T = Rounds> extends Database<T> {
     async getS13() {
         try {
 
-            const s13: S13[] = await sql`select * from vw_base_s13`;
+            const s13_list: S13_Item[] = await sql`select * from vw_base_s13`;
 
-            return s13;
+            const s13_group = [] as S13[];
+
+            s13_list.forEach(s13_item => {
+                const current_item_index = s13_group.findIndex(x => x.id == s13_item.territory_id)
+                if (current_item_index > -1) {
+                    s13_group[current_item_index].rounds.push(s13_item)
+                } else s13_group.push({ id: s13_item.territory_id, rounds: [s13_item] })
+            })
+
+
+            return s13_group;
         } catch (err) {
             console.log(err)
             throw err
