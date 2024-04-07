@@ -99,7 +99,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
         try {
             let last_day: Date | null = moment(schedule.first_day).toDate();
 
-            if (moment(schedule.first_day).isoWeekday() !== 6) {
+            if (moment(schedule.first_day).isoWeekday() !== 6 && schedule.repeat_next_week) {
                 last_day = moment(schedule.first_day).add(7, 'days').toDate();
             }
 
