@@ -155,12 +155,12 @@ export class RoundsService<T = Rounds> extends Database<T> {
             if (!schedule.territories) return null;
 
 
-            console.log('Territorios Selecionados: ' + schedule.territories)
+
 
             const ToScheduleRounds = schedule.territories?.map(territory_id => {
                 const obj = {
                     territory_id,
-                    first_day: schedule.first_day,
+                    first_day: moment(schedule.first_day).toDate(),
                     leader: leader_id,
                     expected_return,
                     last_day,
@@ -172,10 +172,12 @@ export class RoundsService<T = Rounds> extends Database<T> {
                 return obj
             })
 
+            console.log(ToScheduleRounds)
+
             if (ToScheduleRounds && ToScheduleRounds.length > 0) {
                 console.log('Efetuando o agendamento...')
                 const RoundsCreated: Rounds[] = await sql`insert into ${sql(this.table)} ${sql(ToScheduleRounds)} RETURNING *`
-
+                console.log('RoundsCreated', RoundsCreated)
                 if (!!RoundsCreated) {
                     console.log(`${RoundsCreated?.length ?? 0} Territórios agendados a partir de ${moment(schedule.first_day).format("DD-MM-YYYY")} ✅ 🎉`)
 
