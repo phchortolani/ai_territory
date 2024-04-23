@@ -50,3 +50,16 @@ export function getNear(numTerritorio: number) {
     return list[+numTerritorio]
 
 }
+
+export function checkNearTerritories(territories: number[]): boolean {
+    for (const territoryId of territories) {
+        const nears = getNear(territoryId);
+        // Verifica se todos os IDs dos outros territórios estão presentes nos nears
+        for (const otherTerritoryId of territories) {
+            if (territoryId !== otherTerritoryId && !nears.includes(otherTerritoryId)) {
+                return false; // Retorna false se algum ID não estiver presente nos nears
+            }
+        }
+    }
+    return true; // Retorna true se todos os IDs estiverem presentes nos nears de seus respectivos territórios
+}

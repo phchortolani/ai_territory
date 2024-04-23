@@ -7,6 +7,11 @@ import { ReturnSolicitationDto } from "../dtos/returnSolicitation";
 import 'moment/locale/pt-br';
 import { RoundsDto } from "../dtos/roundsDto";
 import { S13, S13_Item } from "../dtos/s13";
+import { getAI } from "./geminiService";
+import { ia_info_territory } from "../models/territory";
+import { IATerritoriesInfo } from "../models/IA/ia_territories_info";
+import { checkNearTerritories, getNear } from "../utils/getNear";
+import { getDefaultPrompt } from "../utils/getPrompt";
 
 export class RoundsService<T = Rounds> extends Database<T> {
 
@@ -121,6 +126,36 @@ export class RoundsService<T = Rounds> extends Database<T> {
                 console.log('Não foi possível seguir com o agendamento.')
                 throw new Error('O agendamento não pode ser concluído visto que esses territórios já possuem agendamento nessa mesma data. Territórios: ' + DataInRange.join(','));
             }
+            const available_territories: ia_info_territory[] = await sql`select t.id,vlj.last_schedule,t.house_numbers  from vw_last_job vlj 
+            join territories t on vlj.territory_id = t.id order by vlj.last_schedule `
+            // aqui a IA entra em ação
+
+            const iaTerritoriesInfo: IATerritoriesInfo[] = available_territories.map(territory => {
+                return { id: territory.id, house_numbers: territory.house_numbers, nears: getNear(territory.id), last_schedule: territory.last_schedule }
+            })
+
+            schedule.territories = undefined;
+            let interacoes = 0;
+
+
+            while (!schedule.territories) {
+                interacoes++;
+                const perfect_prompt = getDefaultPrompt({ infos: iaTerritoriesInfo })
+                const territories_generated = await getAI({ prompt: perfect_prompt })
+                //continua o fluxo
+                const territories_array = eval(territories_generated) as Array<number>
+
+                if (checkNearTerritories(territories_array)) {
+                    schedule.territories = territories_array.sort((a, b) => a - b)
+                    break;
+                }
+                if (interacoes == 20) break;
+            }
+
+            if (!schedule.territories) return null;
+
+
+            console.log('Territorios Selecionados: ' + schedule.territories)
 
             const ToScheduleRounds = schedule.territories?.map(territory_id => {
                 const obj = {
