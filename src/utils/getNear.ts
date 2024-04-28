@@ -51,6 +51,8 @@ export function getNear(numTerritorio: number) {
 
 }
 
+
+
 export function checkNearTerritories(territories: number[]): boolean {
     for (const territoryId of territories) {
         const nears = getNear(territoryId);
