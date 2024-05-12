@@ -6,3 +6,10 @@ export interface Amanda {
     senha: string | null;
     solicitante?: string | null;
 }
+
+export type DadosBasicosDto = {
+    nome: string;
+    email: string;
+    telefone: string;
+    documento: string;
+}

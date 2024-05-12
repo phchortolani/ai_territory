@@ -10,7 +10,7 @@ import { S13, S13_Item } from "../dtos/s13";
 import { getAI } from "./geminiService";
 import { ia_info_territory } from "../models/territory";
 import { IATerritoriesInfo } from "../models/IA/ia_territories_info";
-import { checkNearTerritories, getNear } from "../utils/getNear";
+import { checkNearTerritories, checkNearTerritoriesV2, getNear } from "../utils/getNear";
 import { getDefaultPrompt } from "../utils/getPrompt";
 
 export class RoundsService<T = Rounds> extends Database<T> {
@@ -147,7 +147,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     //continua o fluxo
                     const territories_array = eval(territories_generated) as Array<number>
 
-                    if (checkNearTerritories(territories_array)) {
+                    if (checkNearTerritoriesV2(territories_array)) {
                         schedule.territories = territories_array.sort((a, b) => a - b)
                         break;
                     }

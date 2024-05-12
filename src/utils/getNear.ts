@@ -52,7 +52,7 @@ export function getNear(numTerritorio: number) {
 }
 
 
-
+//todos os ids gerados contem seus nears
 export function checkNearTerritories(territories: number[]): boolean {
     for (const territoryId of territories) {
         const nears = getNear(territoryId);
@@ -63,5 +63,22 @@ export function checkNearTerritories(territories: number[]): boolean {
             }
         }
     }
+    return true; // Retorna true se todos os IDs estiverem presentes nos nears de seus respectivos territórios
+}
+
+//[1,2,3,4]
+//[1,22,24]
+
+//se o id do loop tiver 1 near dentro, já permite
+export function checkNearTerritoriesV2(territories: number[]): boolean {
+
+    const allNearsTerritorires = territories.map(territory => getNear(territory)).reduce((acc, current) => {
+        return acc.concat(current)
+    }, [])
+
+    for (const territory of territories) {
+        if (!allNearsTerritorires.some(t => t === territory)) return false 
+    }
+
     return true; // Retorna true se todos os IDs estiverem presentes nos nears de seus respectivos territórios
 }
