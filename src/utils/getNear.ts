@@ -95,7 +95,7 @@ export function checkQuantityIsValid(territories: number[], info: IATerritoriesI
     const quantity = getQTHouses(territories, info)
 
     if (quantity < min) return { result: false, msg: `Os territórios filtrados não atinge a quantidade mínima de ${min}`, quantity: quantity }
-    if (quantity > max) return { result: false, msg: `Os territórios filtrados não pode ultrapassar a quantidade máxima de ${min}`, quantity: quantity }
+    if (quantity > max) return { result: false, msg: `Os territórios filtrados não pode ultrapassar a quantidade máxima de ${max}`, quantity: quantity }
 
     return { result: true, msg: 'Os territórios atingem a quantidade estipulada!', quantity: quantity }
 }
