@@ -1,8 +1,13 @@
+import { IaExampleHistory } from "../models/IA/ia_example_history";
 import { IATerritoriesInfo } from "../models/IA/ia_territories_info";
 import { Rounds } from "../models/rounds";
 
-export const getDefaultPrompt = ({ infos }: { infos: IATerritoriesInfo[] }) => {
+export const getDefaultPrompt = ({ infos, ia_example_history }: { infos: IATerritoriesInfo[], ia_example_history: IaExampleHistory[] }) => {
     const prompt = `
+
+    Abaixo segue um exemplo mostrando os territórios agendados para aquele dia, esses territórios encaixam nos critérios, use como uma ideia mas não precisa seguir exatamente o que já tinha sido agendado antes.
+
+    ${JSON.stringify(ia_example_history)}
 
     Instruções:
 
