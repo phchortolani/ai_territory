@@ -10,7 +10,7 @@ import { S13, S13_Item } from "../dtos/s13";
 import { getAI } from "./geminiService";
 import { ia_info_territory } from "../models/territory";
 import { IATerritoriesInfo } from "../models/IA/ia_territories_info";
-import { checkNearTerritories, checkNearTerritoriesV2, getNear } from "../utils/getNear";
+import { checkNearTerritories, checkNearTerritoriesV2, checkQuantityIsValid, getNear } from "../utils/getNear";
 import { getDefaultPrompt } from "../utils/getPrompt";
 
 export class RoundsService<T = Rounds> extends Database<T> {
@@ -112,6 +112,51 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
             if (schedule.territories?.some(x => x == 0)) throw new Error('O agendamento possui territórios com o ID 0');
 
+            if (!schedule.not_use_ia) {
+                const available_territories: ia_info_territory[] = await sql`	select t.id,vlj.last_schedule,t.house_numbers from vw_last_job vlj 
+                join territories t on vlj.territory_id = t.id where (current_date - vlj.last_schedule) >= 10 order by vlj.last_schedule`
+                // aqui a IA entra em ação
+
+                const iaTerritoriesInfo: IATerritoriesInfo[] = available_territories.map(territory => {
+                    return { id: territory.id, house_numbers: territory.house_numbers, nears: getNear(territory.id), last_schedule: territory.last_schedule }
+                })
+
+                schedule.territories = undefined;
+                let interacoes = 0;
+
+
+                let perfect_prompt = getDefaultPrompt({ infos: iaTerritoriesInfo })
+
+                while (!schedule.territories) {
+                    interacoes++;
+                    console.log('Tentativa Nº ', interacoes)
+
+                    const territories_generated = await getAI({ prompt: perfect_prompt })
+                    //continua o fluxo
+                    const territories_array = eval(territories_generated) as Array<number>
+
+                    const checkNear = checkNearTerritoriesV2(territories_array)
+                    if (checkNear.result) {
+                        const checkQT = checkQuantityIsValid(territories_array, iaTerritoriesInfo, 120, 200)
+                        if (checkQT.result) {
+                            schedule.territories = territories_array.sort((a, b) => a - b)
+                            break;
+                        } else {
+                            console.log(checkQT.msg)
+                            perfect_prompt = `Foi solicitado esse prompt: ${perfect_prompt} porém ${checkQT.msg}. gere novamente por favor respeitando todas as regras já explicadas.`
+                        }
+                    } else {
+                        console.log(checkNear.msg)
+                        perfect_prompt = `Foi solicitado esse prompt: ${perfect_prompt} porém ${checkNear.msg}. gere novamente por favor respeitando todas as regras já explicadas.`
+                    }
+                    if (interacoes == 20) break;
+                }
+            }
+
+
+            if (!schedule.territories) return null;
+
+
             const rounds = ((await this.list()) as Rounds[]).filter(x => schedule.territories?.includes(x.territory_id));
 
             const DataInRange = rounds.filter(x =>
@@ -126,40 +171,6 @@ export class RoundsService<T = Rounds> extends Database<T> {
                 console.log('Não foi possível seguir com o agendamento.')
                 throw new Error('O agendamento não pode ser concluído visto que esses territórios já possuem agendamento nessa mesma data. Territórios: ' + DataInRange.join(','));
             }
-
-            if (!schedule.not_use_ia) {
-                const available_territories: ia_info_territory[] = await sql`	select t.id,vlj.last_schedule,t.house_numbers from vw_last_job vlj 
-                join territories t on vlj.territory_id = t.id where (current_date - vlj.last_schedule) >= 10 order by vlj.last_schedule`
-                // aqui a IA entra em ação
-
-                const iaTerritoriesInfo: IATerritoriesInfo[] = available_territories.map(territory => {
-                    return { id: territory.id, house_numbers: territory.house_numbers, nears: getNear(territory.id), last_schedule: territory.last_schedule }
-                })
-
-                schedule.territories = undefined;
-                let interacoes = 0;
-
-
-                while (!schedule.territories) {
-                    interacoes++;
-                    const perfect_prompt = getDefaultPrompt({ infos: iaTerritoriesInfo })
-                    const territories_generated = await getAI({ prompt: perfect_prompt })
-                    //continua o fluxo
-                    const territories_array = eval(territories_generated) as Array<number>
-
-                    if (checkNearTerritoriesV2(territories_array)) {
-                        schedule.territories = territories_array.sort((a, b) => a - b)
-                        break;
-                    }
-                    if (interacoes == 20) break;
-                }
-            }
-
-
-            if (!schedule.territories) return null;
-
-
-
 
             const ToScheduleRounds = schedule.territories?.map(territory_id => {
                 const obj = {
@@ -176,14 +187,13 @@ export class RoundsService<T = Rounds> extends Database<T> {
                 return obj
             })
 
-            console.log(ToScheduleRounds)
-
             if (ToScheduleRounds && ToScheduleRounds.length > 0) {
                 console.log('Efetuando o agendamento...')
                 const RoundsCreated: Rounds[] = await sql`insert into ${sql(this.table)} ${sql(ToScheduleRounds)} RETURNING *`
-                console.log('RoundsCreated', RoundsCreated)
                 if (!!RoundsCreated) {
                     console.log(`${RoundsCreated?.length ?? 0} Territórios agendados a partir de ${moment(schedule.first_day).format("DD-MM-YYYY")} ✅ 🎉`)
+
+                    const quantity_house: any = await sql`select sum(t.house_numbers) from territories t where id in ${sql(schedule.territories)};`.then(x => x[0].sum)
 
                     const day = moment(schedule.first_day).utc().format('dddd').toLowerCase().charAt(0).toUpperCase() + moment(schedule.first_day).utc().format('dddd').slice(1);
 
@@ -191,7 +201,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
                     formattedData += `1ª Saída: *${moment(RoundsCreated[0].first_day).utc().format('DD-MM-YYYY')}* | 2ª Saída: *${moment(RoundsCreated[0].last_day).utc().format('DD-MM-YYYY')}*\n`;
                     formattedData += `Territórios: *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n `;
-                    formattedData += '----\n';
+                    formattedData += `Quantidade de casas: *${quantity_house}*\n`;
                     return formattedData
                 }
                 console.log('Nenhuma rodada criada! 🙈❌')

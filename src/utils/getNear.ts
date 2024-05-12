@@ -1,3 +1,5 @@
+import { IATerritoriesInfo } from "../models/IA/ia_territories_info";
+
 export function getNear(numTerritorio: number) {
     const list: { [key: number]: number[] } = {
         1: [2, 3, 4],
@@ -70,15 +72,30 @@ export function checkNearTerritories(territories: number[]): boolean {
 //[1,22,24]
 
 //se o id do loop tiver 1 near dentro, já permite
-export function checkNearTerritoriesV2(territories: number[]): boolean {
+export function checkNearTerritoriesV2(territories: number[]): { result: boolean, msg: string } {
 
     const allNearsTerritorires = territories.map(territory => getNear(territory)).reduce((acc, current) => {
         return acc.concat(current)
     }, [])
 
     for (const territory of territories) {
-        if (!allNearsTerritorires.some(t => t === territory)) return false 
+        if (!allNearsTerritorires.some(t => t === territory)) return { result: false, msg: 'Os territórios não respeitam a proximidade!' };
     }
 
-    return true; // Retorna true se todos os IDs estiverem presentes nos nears de seus respectivos territórios
+    return { result: true, msg: 'Os territórios respeitam a proximidade!' };
+}
+
+function getQTHouses(territories: number[], info: IATerritoriesInfo[]): number {
+    const quantity = info.filter(x => territories.includes(x.id)).reduce((acc, cur) => acc += (cur?.house_numbers ?? 0), 0)
+    return quantity
+}
+
+
+export function checkQuantityIsValid(territories: number[], info: IATerritoriesInfo[], min: number, max: number): { result: boolean, msg: string, quantity: number } {
+    const quantity = getQTHouses(territories, info)
+
+    if (quantity < min) return { result: false, msg: `Os territórios filtrados não atinge a quantidade mínima de ${min}`, quantity: quantity }
+    if (quantity > max) return { result: false, msg: `Os territórios filtrados não pode ultrapassar a quantidade máxima de ${min}`, quantity: quantity }
+
+    return { result: true, msg: 'Os territórios atingem a quantidade estipulada!', quantity: quantity }
 }
