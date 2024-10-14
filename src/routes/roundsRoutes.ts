@@ -103,8 +103,8 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
             if (!leader_id) return reply.status(400).send('Para atualizar a rodada é necessário informar o leader_id no URI')
             const schedule = request.body as ISchedule
             if (!schedule) return reply.status(400).send('Para atualizar a rodada é necessário informar o array de numeros na propriedade "MarkAsDone"')
+            /* const ScheduleResult = await RoundsService.ToSchedule(schedule, leader_id); */
             const ScheduleResult = await RoundsService.ToSchedule(schedule, leader_id);
-
             if (ScheduleResult) return reply.status(200).send(ScheduleResult)
             return reply.status(502).send(`Não foi possível agendar esses territórios.`)
         } catch (err) {

@@ -9,12 +9,14 @@ import CampaignRoutes from './routes/campaignRoutes';
 import { CampaignService } from './services/campaignService';
 import statusTerritoryRoutes from './routes/statusTerritoryRoutes';
 import { StatusTerritoryService } from './services/statusTerritoryService';
+import { BrothersService } from './services/brothersService';
 
 import cors from '@fastify/cors'
 import AmandaRoutes from './routes/amandaRoutes';
 import { AmandaService } from './services/amandaService';
 import WhatsappRoutes from './routes/whatsappRoutes';
 import { WhatsappService } from './services/whatsappService';
+import BrothersRoutes from './routes/brothersRoutes';
 
 const server = fastify()
 
@@ -36,6 +38,7 @@ CampaignRoutes(server, new CampaignService())
 statusTerritoryRoutes(server, new StatusTerritoryService())
 AmandaRoutes(server, new AmandaService())
 WhatsappRoutes(server, new WhatsappService())
+BrothersRoutes(server, new BrothersService())
 
 server.listen({
     port: Number(port),

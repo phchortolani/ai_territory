@@ -101,6 +101,70 @@ export class RoundsService<T = Rounds> extends Database<T> {
         }
     }
 
+    async getRoundsByRangeofDate(days: number): Promise<IATerritoriesInfo[]> {
+
+        const ia_info_territory = await sql`	select t.id,vlj.last_schedule,t.house_numbers from vw_last_job vlj 
+                join territories t on vlj.territory_id = t.id where (current_date - vlj.last_schedule) >= ${days} order by vlj.last_schedule`
+
+        return ia_info_territory.map(territory => {
+            return { id: territory.id, house_numbers: territory.house_numbers, nears: getNear(territory.id), last_schedule: territory.last_schedule }
+        })
+
+    }
+
+    async ToScheduleRaiz(schedule: ISchedule, leader_id: number) {
+
+      /*   let last_day: Date | null = moment(schedule.first_day).toDate();
+
+        if (moment(schedule.first_day).isoWeekday() !== 6 && schedule.repeat_next_week) {
+            last_day = moment(schedule.first_day).add(7, 'days').toDate();
+        }
+
+        const expected_return = last_day;
+
+        if (schedule.territories?.some(x => x == 0)) throw new Error('O agendamento possui territórios com o ID 0');
+
+        const rounds = ((await this.list()) as Rounds[]).filter(x => schedule.territories?.includes(x.territory_id));
+
+        const DataInRange = rounds.filter(x =>
+            moment(x.first_day).isSame(new Date(schedule.first_day)) ||
+            moment(x.last_day).isSame(last_day) ||
+            moment(x.last_day).isSameOrAfter(new Date(schedule.first_day))
+            || x.status == 2)
+            .map(x => x.territory_id)
+
+
+        if (DataInRange.length > 0) {
+            console.log('Não foi possível seguir com o agendamento.')
+            throw new Error('O agendamento não pode ser concluído visto que esses territórios já possuem agendamento nessa mesma data. Territórios: ' + DataInRange.join(','));
+        }
+ */
+
+        const available_territories = await this.getRoundsByRangeofDate(15)
+
+
+        if (!schedule.territories) return null;
+
+        console.log(available_territories)
+
+        // pegar a partir de 15 dias
+
+
+        //criar uma lista de lista de retonos 
+
+        //criar método para pegar o primeiro território e verificar se os próximos territórios são proximos
+
+        // caso o proximo território for próximo adicione ele na lista 1
+
+        //caso não for proximo adicione ele na lista 2 e repita o processo para ele
+
+        // a primeira lista a ter mais de 120 casas ja será retornada.
+
+
+        // Criar uma lista 
+
+    }
+
     async ToSchedule(schedule: ISchedule, leader_id: number) {
         try {
             let last_day: Date | null = moment(schedule.first_day).toDate();
