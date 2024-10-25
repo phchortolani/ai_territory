@@ -18,7 +18,14 @@ export default function BrothersRoutes(server: FastifyInstance, brotherservice: 
         const { id } = request.params as any
         if (!id) return reply.status(400).send('O irmão informado não possui ID no GET.')
 
+        if (brother.families) {
+            await brotherservice.createFamilies(brother, brother.families)
+        }
+
+        delete brother.families;
+
         const brother_updated = await brotherservice.update(id, brother)
+
         if (brother_updated) return reply.status(204).send()
         return reply.status(502).send(`Não foi possível atualizar o irmão ${brother?.id}.`)
     })
@@ -34,6 +41,16 @@ export default function BrothersRoutes(server: FastifyInstance, brotherservice: 
         try {
             const { id } = request.params as any;
             const brothers = await brotherservice.list(id);
+            const families = await brotherservice.getFamilies()
+
+            brothers.forEach(brother => {
+                const family_persons = families.filter(family => family.person_id === brother.id).map(family => family.family_id)
+
+                if (family_persons.length > 0) {
+                    brother.families = brothers.filter(brother => family_persons.includes(brother.id))
+                }
+            });
+
             return reply.status(200).send(brothers)
         } catch (err) {
             return reply.status(500).send()
