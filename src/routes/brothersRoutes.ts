@@ -46,14 +46,15 @@ export default function BrothersRoutes(server: FastifyInstance, brotherservice: 
             brothers.forEach(brother => {
                 const family_persons = families.filter(family => family.person_id === brother.id).map(family => family.family_id)
 
-                if (family_persons.length > 0) {
-                    brother.families = brothers.filter(brother => family_persons.includes(brother.id))
+                if (family_persons?.length > 0) {
+                    const itens = brothers.filter(brother => family_persons.includes(brother.id)).map(x => { return { ...x, families: undefined } })
+                    brother.families = itens
                 }
             });
 
             return reply.status(200).send(brothers)
         } catch (err) {
-            return reply.status(500).send()
+            return reply.status(500).send(err)
         }
 
     })

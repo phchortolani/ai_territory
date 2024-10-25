@@ -28,7 +28,8 @@ export class BrothersService<T = brother> extends Database<T> {
 
         families = families.filter(f => !current_families.some(cf => cf.person_id === f.id))
 
-         await sql`delete from congregations_brothers_family where person_id = ${brother.id}`
+        if (current_families.length > 0) await sql`delete from congregations_brothers_family where person_id = ${brother.id}`
+
         families.forEach(family => {
             this.#addFamily(brother, family)
         })
@@ -38,6 +39,7 @@ export class BrothersService<T = brother> extends Database<T> {
 
     async  #addFamily(brother: brother, family: brother) {
         const family_relation = await sql`insert into congregations_brothers_family (person_id, family_id) values (${brother.id}, ${family.id}) returning *`
+
         if (family_relation.length > 0) {
             console.log(`Adicionado(a) o(a) irmã(o) ${brother.id} - ${brother.brother_name} no(a) irmão(a) ${family.id} - ${family.brother_name} ✅`)
         } else console.log(`Falha ao adicionar o irmão ${brother.id} no(a) irmão(a) ${family.id} - ${family.brother_name} 🤯`)
