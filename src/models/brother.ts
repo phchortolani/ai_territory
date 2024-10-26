@@ -3,5 +3,6 @@ export type brother = {
     active: boolean
     brother_name: string
     active_tpl: boolean,
+    sex: string,
     families?: brother[]
 }

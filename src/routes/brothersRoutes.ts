@@ -8,6 +8,7 @@ const path = '/brothers'
 export default function BrothersRoutes(server: FastifyInstance, brotherservice: BrothersService) {
     server.post(path, async (request, reply) => {
         const brother = request.body as brother
+        delete brother.families
         const brother_saved = await brotherservice.create(brother)
         if (brother_saved) return reply.status(201).send(brother_saved)
         return reply.status(502).send(`Não foi possível salvar o irmão.`)
@@ -51,7 +52,6 @@ export default function BrothersRoutes(server: FastifyInstance, brotherservice: 
                     brother.families = itens
                 }
             });
-
             return reply.status(200).send(brothers)
         } catch (err) {
             return reply.status(500).send(err)
