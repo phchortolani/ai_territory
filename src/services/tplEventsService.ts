@@ -29,7 +29,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
             const events: TplEvent[] = await sql`
             select * from ${sql(this.table)} where event_date between ${initial_date.toString()} and ${final_date.toString()}
         `;
-            return events.map(x => ({ ...x, event_date: moment(x.event_date).add(3, 'hours').toDate() }));
+            return events.map(x => ({ ...x, event_date: moment(x.event_date).add(3, 'hours').toDate() })).sort((a, b) => a.event_date.getTime() - b.event_date.getTime());
         } catch (err) {
             console.log(err)
             throw err
@@ -38,11 +38,13 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
 
     async generateEvents({ initial_date, final_date }: TplEventsParams) {
         try {
-
+            console.log('Gerando eventos...')
+            console.log('periodo: ', initial_date, final_date)
             const brothers_active: vw_brothers_active_to_generate[] = await sql`select * from ${sql('vw_brothers_active_to_generate')}`;
             if (!brothers_active) return
 
-            const qt_days = moment(final_date).diff(initial_date, 'days');
+
+            const qt_days = moment(final_date).diff(initial_date, 'days') + 1;
 
 
             const times: TplDayTime[] = await sql`select * from ${sql('tpl_day_time')}`
@@ -56,11 +58,13 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                 const event_date = moment(initial_date).add(i, 'days').format('YYYY-MM-DD'); // yyyy-mm-dd
                 let event_date_week = moment(event_date).format('ddd').toLowerCase(); // dom seg ter qua qui sex sab
                 if (event_date_week == 'sab') event_date_week = 'sáb';
+
+                console.log('Buscando horários do dia: ', event_date, event_date_week, qt_days)
                 const times_day_ids = times.filter(x => x.day_time.trim().toLowerCase().startsWith(event_date_week.trim().toLowerCase())).map(x => x.id) // 1,2,3,4,5,6,7 etc
                 if (times_day_ids.length == 0) continue;
 
 
-
+                console.log('Gerando eventos para o dia: ', event_date, event_date_week, times_day_ids.length)
                 const brothers_ready_for_this_day = brothers_active.filter(x => x.tpl_times.split(',').some(x => times_day_ids.includes(Number(x))));
                 if (brothers_ready_for_this_day.length == 0) continue;
 
@@ -151,19 +155,24 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
             }
 
             if (tpl_events.length > 0 && initial_date && final_date) {
-                console.log("inserindo os eventos no banco de dados...")
+                console.log("deletando o periodo antigo..." + initial_date + " a " + final_date)
                 /*      console.log(tpl_events) */
                 const deleted_events = await sql`
                      delete from ${sql('tpl_events')} 
-                     where event_date >= ${initial_date} and event_date <= ${final_date}
+                    where event_date between ${moment(initial_date).format('YYYY-MM-DD')} and ${moment(final_date).format('YYYY-MM-DD')} 
                  `;
 
+                console.log(deleted_events.count + " linhas deletadas")
+                console.log("inserindo os eventos no banco de dados...")
                 const created = await sql`
                      insert into ${sql('tpl_events')} ${sql(tpl_events)} 
                      returning *
                  `;
+                console.log(created.count + " linhas inseridas")
             } else {
-                console.log("initial_date ou final_date estão indefinidos.");
+                if (tpl_events.length == 0) {
+                    console.log("nenhum evento gerado")
+                } else console.log("initial_date ou final_date estão indefinidos.");
             }
 
 
