@@ -44,6 +44,7 @@ export default function TplEventsRoutes(server: FastifyInstance, TplEventsServic
     server.post(`${path}/generate`, async (request, reply) => {
         try {
             const tpl_events = request.body as { initial_date: Date, final_date: Date }
+
             const TplEvents = await TplEventsService.generateEvents(tpl_events)
             const convertEventsToFront = await TplEventsService.convertEventsToFront(TplEvents)
             return reply.status(200).send(convertEventsToFront)
