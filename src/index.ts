@@ -19,6 +19,9 @@ import { WhatsappService } from './services/whatsappService';
 import BrothersRoutes from './routes/brothersRoutes';
 import TplDayTimeRoutes from './routes/tplDayTimeRoutes';
 import { TplDayTimeService } from './services/tplDayTimeService';
+import TplEventsRoutes from './routes/tplEventsRoutes';
+import { TplEventsService } from './services/tplEventsService';
+
 
 const server = fastify()
 
@@ -42,6 +45,7 @@ AmandaRoutes(server, new AmandaService())
 WhatsappRoutes(server, new WhatsappService())
 BrothersRoutes(server, new BrothersService())
 TplDayTimeRoutes(server, new TplDayTimeService())
+TplEventsRoutes(server, new TplEventsService())
 
 server.listen({
     port: Number(port),
