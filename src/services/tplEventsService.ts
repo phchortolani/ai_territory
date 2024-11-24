@@ -103,7 +103,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                             brother_id_2: 0
                         };
 
-                        let tentatives = 60;
+                        let tentatives = 20;
                         while (pair.brother_id_1 == 0 || pair.brother_id_2 == 0) {
                             const brothers_avaliable_for_this_hour = brothers_ready_for_this_day.filter(x => x.tpl_times?.split(',').includes(String(times_day_ids[horario_index])))
 
