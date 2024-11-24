@@ -67,9 +67,9 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                 console.log('Gerando eventos para o dia: ', event_date, event_date_week, times_day_ids.length)
 
                 const brothers_ready_for_this_day = brothers_active.filter(x => x.tpl_times?.split(',').some(x => times_day_ids.includes(Number(x))));
-               
+
                 if (brothers_ready_for_this_day.length == 0) continue;
-             
+
                 const qt_times = times_day_ids.length // quntidade de horário para ser gerados
 
                 /*      console.log(times_day_ids) */
@@ -103,19 +103,20 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                             brother_id_2: 0
                         };
 
-                        let tentatives = 20;
+                        let tentatives = 100;
                         while (pair.brother_id_1 == 0 || pair.brother_id_2 == 0) {
-                            const brothers_avaliable_for_this_hour = brothers_ready_for_this_day.filter(x => x.tpl_times?.split(',').includes(String(times_day_ids[horario_index])))
+                            let brothers_avaliable_for_this_hour = brothers_ready_for_this_day.filter(x => x.tpl_times?.split(',').includes(String(times_day_ids[horario_index])))
 
-                            console.log(brothers_avaliable_for_this_hour.length == 0 ? `sem brothers disponíveis para o horário: ${times_day_ids[horario_index]} ` : `brothers disponíveis para o horário ${times_day_ids[horario_index]}`)
                             const brother_1 = brothers_avaliable_for_this_hour[Math.floor(Math.random() * brothers_avaliable_for_this_hour.length)];
                             const brother_2 = brothers_avaliable_for_this_hour[Math.floor(Math.random() * brothers_avaliable_for_this_hour.length)];
-                            if (times_day_ids[horario_index] == 1) console.log(brothers_ready_for_this_day)
-
+                           
                             if (!brother_1 && !brother_2) {
                                 console.log('sem brothers disponíveis para o horário: ' + times_day_ids[horario_index])
                                 break;
                             }
+
+                            const brother_scheduled_for_this_day = tpl_events.filter(x => x.event_date == moment(event_date).toDate()).some(x => x.pair?.includes(String(brother_1?.id)) || x.pair?.includes(String(brother_2?.id)))
+                            if (brother_scheduled_for_this_day) continue;
 
                             if ((!brother_1 && brother_2) || (brother_1 && !brother_2)) {
                                 console.log('encontrou apeneas 1 brother das duplas disponivel')
