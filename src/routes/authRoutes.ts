@@ -14,10 +14,10 @@ export default function UserRoutes(server: FastifyInstance, userService: UserSer
         const users = await userService.list();
         const user = users.find(u => u.email.trim().toLowerCase() === email.toLowerCase().trim());
 
-        if (!user) return reply.status(401).send({ error: 'Credenciais inválidas | code: 1' });
+        if (!user) return reply.status(401).send({ error: 'Usuário ou senha não encontrado' });
 
         const is_valid_password = await isValidPassword(password, user.password);
-        if (!is_valid_password) return reply.status(401).send({ error: 'Credenciais inválidas | code: 2' });
+        if (!is_valid_password) return reply.status(401).send({ error: 'Senha inválida' });
 
         const token = server.jwt.sign({ id: user.id, name: user.name, email: user.email }, { expiresIn: '1d' });
 
@@ -36,14 +36,14 @@ export default function UserRoutes(server: FastifyInstance, userService: UserSer
         const users = await userService.list();
         const user_db = users.find(u => u.email === email);
 
-        if (!user_db) return reply.status(401).send({ error: 'Credenciais inválidas | code: 1' });
+        if (!user_db) return reply.status(401).send({ error: 'Usuário ou senha não encontrado' });
 
         const is_valid_password = await isValidPassword(old_password, user_db.password);
-        if (!is_valid_password) return reply.status(401).send({ error: 'senha anterior inválida' });
+        if (!is_valid_password) return reply.status(401).send({ error: 'Senha anterior inválida' });
 
         const isUpdated = await userService.update(user_db.id!, { ...user_db, password: await hashPassword(password) });
 
-        if (!isUpdated) return reply.status(401).send({ error: 'Credenciais inválidas | code:3' });
+        if (!isUpdated) return reply.status(401).send({ error: 'Erro ao atualizar a senha' });
 
         const users_updated = { id: user_db.id, name: user_db.name, email: user_db.email }
 
