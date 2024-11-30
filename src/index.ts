@@ -10,7 +10,7 @@ import { CampaignService } from './services/campaignService';
 import statusTerritoryRoutes from './routes/statusTerritoryRoutes';
 import { StatusTerritoryService } from './services/statusTerritoryService';
 import { BrothersService } from './services/brothersService';
-
+import jwt from '@fastify/jwt';
 import cors from '@fastify/cors'
 import AmandaRoutes from './routes/amandaRoutes';
 import { AmandaService } from './services/amandaService';
@@ -21,6 +21,8 @@ import TplDayTimeRoutes from './routes/tplDayTimeRoutes';
 import { TplDayTimeService } from './services/tplDayTimeService';
 import TplEventsRoutes from './routes/tplEventsRoutes';
 import { TplEventsService } from './services/tplEventsService';
+import UserRoutes from './routes/authRoutes';
+import { UserService } from './services/userService';
 
 
 const server = fastify()
@@ -32,10 +34,16 @@ server.register(cors, {
     },
     methods: ['GET', 'PUT', 'POST', 'DELETE'],
     credentials: true,
+
+});
+
+server.register(jwt, {
+    secret: 'S3Cr3TAiTab', // Substitua por uma chave segura
 });
 
 const port = process.env.PORT ?? 3333;
 
+UserRoutes(server, new UserService())
 TerritoryRoutes(server, new TerritoryService());
 LeadersRoutes(server, new LeadersService());
 RoundsRoutes(server, new RoundsService())
@@ -46,6 +54,7 @@ WhatsappRoutes(server, new WhatsappService())
 BrothersRoutes(server, new BrothersService())
 TplDayTimeRoutes(server, new TplDayTimeService())
 TplEventsRoutes(server, new TplEventsService())
+
 
 server.listen({
     port: Number(port),

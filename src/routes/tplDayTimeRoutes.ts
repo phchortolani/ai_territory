@@ -6,7 +6,9 @@ import { TplDayTimeService } from '../services/tplDayTimeService';
 const path = '/TplDayTime'
 
 export default function TplDayTimeRoutes(server: FastifyInstance, tplDayTimeService: TplDayTimeService) {
+
     server.post(path, async (request, reply) => {
+        await request.jwtVerify();
         const leader = request.body as TplDayTime
         const leader_saved = await tplDayTimeService.create(leader)
         if (leader_saved) return reply.status(201).send(leader_saved)
@@ -14,6 +16,7 @@ export default function TplDayTimeRoutes(server: FastifyInstance, tplDayTimeServ
     })
 
     server.put(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const leader = request.body as TplDayTime
         const { id } = request.params as any
         if (!id) return reply.status(400).send('O território informado não possui ID no GET.')
@@ -24,6 +27,7 @@ export default function TplDayTimeRoutes(server: FastifyInstance, tplDayTimeServ
     })
 
     server.delete(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const { id } = request.params as any;
         const hasDeleted = await tplDayTimeService.delete(id)
         if (hasDeleted) return reply.status(200).send()
@@ -31,6 +35,7 @@ export default function TplDayTimeRoutes(server: FastifyInstance, tplDayTimeServ
     })
 
     server.get(`${path}/:id?`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { id } = request.params as any;
             const TplDayTime = await tplDayTimeService.list(id);

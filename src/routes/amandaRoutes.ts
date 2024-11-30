@@ -14,6 +14,7 @@ export default function AmandaRoutes(server: FastifyInstance, amandaService: Ama
         })
      */
     server.post(path, async (request, reply) => {
+        await request.jwtVerify();
         const dados_basico = request.body as DadosBasicosDto
         const dados_basicos = await amandaService.create(dados_basico)
         if (dados_basicos) return reply.status(201).send(dados_basicos)
@@ -21,6 +22,7 @@ export default function AmandaRoutes(server: FastifyInstance, amandaService: Ama
     })
 
     server.get(`${path}/:id?`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { id } = request.params as any;
             const dados_basicos = await amandaService.list(id);

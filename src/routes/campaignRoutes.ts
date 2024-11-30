@@ -6,6 +6,7 @@ const path = '/campaign'
 
 export default function CampaignRoutes(server: FastifyInstance, campaignService: CampaignService) {
     server.post(path, async (request, reply) => {
+        await request.jwtVerify();
         const campaign = request.body as Campaign
         const campaign_saved = await campaignService.create(campaign)
         if (campaign_saved) return reply.status(201).send(campaign_saved)
@@ -13,6 +14,7 @@ export default function CampaignRoutes(server: FastifyInstance, campaignService:
     })
 
     server.put(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const campaign = request.body as Campaign
         const { id } = request.params as any
         if (!id) return reply.status(400).send('A campanha informada não possui ID no GET.')
@@ -23,6 +25,7 @@ export default function CampaignRoutes(server: FastifyInstance, campaignService:
     })
 
     server.delete(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const { id } = request.params as any;
         const hasDeleted = await campaignService.delete(id)
         if (hasDeleted) return reply.status(200).send()
@@ -30,6 +33,7 @@ export default function CampaignRoutes(server: FastifyInstance, campaignService:
     })
 
     server.get(`${path}/:id?`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { id } = request.params as any;
             const campaign = await campaignService.list(id);

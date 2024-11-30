@@ -9,6 +9,7 @@ const path = '/whatsapp'
 
 export default function WhatsappRoutes(server: FastifyInstance, whatsappService: WhatsappService) {
     server.get(`${path}/validateToken`, async (request, reply) => {
+
         const { WA_CHALLENGE_TOKEN } = process.env
 
         const params = request.query as ChallengeToken;

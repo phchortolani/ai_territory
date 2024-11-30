@@ -6,6 +6,7 @@ const path = '/statusTerritory'
 
 export default function statusTerritoryRoutes(server: FastifyInstance, statusTerritoryService: StatusTerritoryService) {
     server.post(path, async (request, reply) => {
+        await request.jwtVerify();
         const statusTerritory = request.body as StatusTerritory
         const statusTerritory_saved = await statusTerritoryService.create(statusTerritory)
         if (statusTerritory_saved) return reply.status(201).send(statusTerritory_saved)
@@ -13,6 +14,7 @@ export default function statusTerritoryRoutes(server: FastifyInstance, statusTer
     })
 
     server.put(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const statusTerritory = request.body as StatusTerritory
         const { id } = request.params as any
         if (!id) return reply.status(400).send('o status do território informado não possui ID no GET.')
@@ -23,6 +25,7 @@ export default function statusTerritoryRoutes(server: FastifyInstance, statusTer
     })
 
     server.delete(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const { id } = request.params as any;
         const hasDeleted = await statusTerritoryService.delete(id)
         if (hasDeleted) return reply.status(200).send()
@@ -30,6 +33,7 @@ export default function statusTerritoryRoutes(server: FastifyInstance, statusTer
     })
 
     server.get(`${path}/:id?`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { id } = request.params as any;
             const statusTerritory = await statusTerritoryService.list(id);

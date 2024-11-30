@@ -11,4 +11,5 @@ export type database_options = {
     | 'congregations_brothers_family'
     | 'tpl_day_time'
     | 'tpl_events'
+    | 'users'
 }

@@ -10,6 +10,7 @@ const path = '/rounds'
 
 export default function RoundsRoutes(server: FastifyInstance, RoundsService: RoundsService) {
     server.post(path, async (request, reply) => {
+        await request.jwtVerify();
         const round = request.body as Rounds
         const round_saved = await RoundsService.create(round)
         if (round_saved) return reply.status(201).send(round_saved)
@@ -17,6 +18,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
     })
 
     server.put(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const round = request.body as Rounds
         const { id } = request.params as any
         if (!id) return reply.status(400).send('A rodada informada não possui ID no GET.')
@@ -27,6 +29,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
     })
 
     server.delete(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const { id } = request.params as any;
         const hasDeleted = await RoundsService.delete(id)
         if (hasDeleted) return reply.status(200).send()
@@ -34,6 +37,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
     })
 
     server.get(`${path}/:id?`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { id } = request.params as any;
             const rounds = await RoundsService.list(id);
@@ -45,6 +49,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
     })
 
     server.get(`${path}/schedule/:status?`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { status } = request.params as any;
             let rounds = await RoundsService.getScheduleByStatus(status);
@@ -64,6 +69,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
     })
 
     server.post(`${path}/markasdone/:leader_id`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { leader_id } = request.params as any
             if (!leader_id) return reply.status(400).send('Para atualizar a rodada é necessário informar o leader_id no URI')
@@ -82,6 +88,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
     })
 
     server.post(`${path}/markRoundAsDone/:round_id`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { round_id } = request.params as any
             const { status } = request.body as { status: number }
@@ -98,6 +105,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
     })
 
     server.post(`${path}/schedule/:leader_id`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { leader_id } = request.params as any
             if (!leader_id) return reply.status(400).send('Para atualizar a rodada é necessário informar o leader_id no URI')
@@ -125,6 +133,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
      }) */
 
     server.get(`${path}/getReturnSolicitation`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const ret = await RoundsService.getReturnSolicitation()
             return reply.status(200).send(ret)
@@ -134,6 +143,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
     })
 
     server.get(`${path}/getS13`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const ret = await RoundsService.getS13()
             return reply.status(200).send(ret)
@@ -142,6 +152,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
         }
     })
     server.get(`${path}/Whatsapp/Devolution`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const ret = await RoundsService.getReturnSolicitation()
 

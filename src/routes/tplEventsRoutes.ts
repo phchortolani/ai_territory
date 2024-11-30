@@ -6,6 +6,7 @@ const path = '/TplEvents'
 
 export default function TplEventsRoutes(server: FastifyInstance, TplEventsService: TplEventsService) {
     server.post(path, async (request, reply) => {
+        await request.jwtVerify();
         const tpl_events = request.body as TplEvent
         const tpl_events_saved = await TplEventsService.create(tpl_events)
         if (tpl_events_saved) return reply.status(201).send(tpl_events_saved)
@@ -13,6 +14,7 @@ export default function TplEventsRoutes(server: FastifyInstance, TplEventsServic
     })
 
     server.put(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const tpl_events = request.body as TplEvent
         const { id } = request.params as any
         if (!id) return reply.status(400).send('O território informado não possui ID no GET.')
@@ -23,6 +25,7 @@ export default function TplEventsRoutes(server: FastifyInstance, TplEventsServic
     })
 
     server.delete(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const { id } = request.params as any;
         const hasDeleted = await TplEventsService.delete(id)
         if (hasDeleted) return reply.status(200).send()
@@ -30,6 +33,7 @@ export default function TplEventsRoutes(server: FastifyInstance, TplEventsServic
     })
 
     server.get(`${path}/:id?`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { id } = request.params as any;
             const TplEvents = await TplEventsService.list(id);
@@ -42,6 +46,7 @@ export default function TplEventsRoutes(server: FastifyInstance, TplEventsServic
     })
 
     server.post(`${path}/generate`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const tpl_events = request.body as { initial_date: Date, final_date: Date }
 
@@ -54,11 +59,12 @@ export default function TplEventsRoutes(server: FastifyInstance, TplEventsServic
 
     })
     server.post(`${path}/getByDate`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const tpl_events = request.body as { initial_date: Date, final_date: Date }
             const TplEvents = await TplEventsService.getEvents(tpl_events)
             const convertEventsToFront = await TplEventsService.convertEventsToFront(TplEvents)
-            
+
             return reply.status(200).send(convertEventsToFront)
         } catch (err) {
             return reply.status(500).send()

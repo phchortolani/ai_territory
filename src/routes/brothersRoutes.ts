@@ -7,6 +7,7 @@ const path = '/brothers'
 
 export default function BrothersRoutes(server: FastifyInstance, brotherservice: BrothersService) {
     server.post(path, async (request, reply) => {
+        await request.jwtVerify();
         const brother = request.body as brother
         delete brother.families
         const brother_saved = await brotherservice.create(brother)
@@ -15,6 +16,7 @@ export default function BrothersRoutes(server: FastifyInstance, brotherservice: 
     })
 
     server.put(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const brother = request.body as brother
         const { id } = request.params as any
         if (!id) return reply.status(400).send('O irmão informado não possui ID no GET.')
@@ -32,6 +34,7 @@ export default function BrothersRoutes(server: FastifyInstance, brotherservice: 
     })
 
     server.delete(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const { id } = request.params as any;
         const hasDeleted = await brotherservice.delete(id)
         if (hasDeleted) return reply.status(200).send()
@@ -39,6 +42,7 @@ export default function BrothersRoutes(server: FastifyInstance, brotherservice: 
     })
 
     server.get(`${path}/:id?`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { id } = request.params as any;
             const brothers = await brotherservice.list(id);

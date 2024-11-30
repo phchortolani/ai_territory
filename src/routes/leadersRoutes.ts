@@ -6,6 +6,7 @@ const path = '/leaders'
 
 export default function LeadersRoutes(server: FastifyInstance, leaderService: LeadersService) {
     server.post(path, async (request, reply) => {
+        await request.jwtVerify();
         const leader = request.body as Leaders
         const leader_saved = await leaderService.create(leader)
         if (leader_saved) return reply.status(201).send(leader_saved)
@@ -13,6 +14,7 @@ export default function LeadersRoutes(server: FastifyInstance, leaderService: Le
     })
 
     server.put(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const leader = request.body as Leaders
         const { id } = request.params as any
         if (!id) return reply.status(400).send('O território informado não possui ID no GET.')
@@ -23,6 +25,7 @@ export default function LeadersRoutes(server: FastifyInstance, leaderService: Le
     })
 
     server.delete(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const { id } = request.params as any;
         const hasDeleted = await leaderService.delete(id)
         if (hasDeleted) return reply.status(200).send()
@@ -30,6 +33,7 @@ export default function LeadersRoutes(server: FastifyInstance, leaderService: Le
     })
 
     server.get(`${path}/:id?`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { id } = request.params as any;
             const leaders = await leaderService.list(id);

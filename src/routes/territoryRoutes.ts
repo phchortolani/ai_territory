@@ -5,7 +5,9 @@ import { Territory } from '../models/territory';
 const path = '/territory'
 
 export default function TerritoryRoutes(server: FastifyInstance, territoryService: TerritoryService) {
+
     server.post(path, async (request, reply) => {
+        await request.jwtVerify();
         const territory = request.body as Territory
         const territory_saved = await territoryService.create(territory)
         if (territory_saved) return reply.status(201).send(territory_saved)
@@ -13,6 +15,7 @@ export default function TerritoryRoutes(server: FastifyInstance, territoryServic
     })
 
     server.put(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const territory = request.body as Territory
         const { id } = request.params as any
         if (!id) return reply.status(400).send('O território informado não possui ID no GET.')
@@ -23,6 +26,7 @@ export default function TerritoryRoutes(server: FastifyInstance, territoryServic
     })
 
     server.delete(`${path}/:id`, async (request, reply) => {
+        await request.jwtVerify();
         const { id } = request.params as any;
         const hasDeleted = await territoryService.delete(id)
         if (hasDeleted) return reply.status(200).send()
@@ -30,6 +34,8 @@ export default function TerritoryRoutes(server: FastifyInstance, territoryServic
     })
 
     server.get(`${path}/:id?`, async (request, reply) => {
+        await request.jwtVerify();
+
         try {
             const { id } = request.params as any;
             const territorys = await territoryService.list(id);
@@ -39,6 +45,7 @@ export default function TerritoryRoutes(server: FastifyInstance, territoryServic
         }
     })
     server.get(`${path}/getFullTerritoriesList`, async (request, reply) => {
+        await request.jwtVerify();
         try {
             const { id } = request.params as any;
             const ret = await Promise.all([territoryService.list(id), territoryService.getAllAndress()])
