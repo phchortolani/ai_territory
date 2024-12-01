@@ -9,6 +9,7 @@ import 'moment/locale/pt-br';
 interface TplEventsParams {
     initial_date?: Date,
     final_date?: Date,
+    event_id?: number
 }
 
 export class TplEventsService<T = TplEvent> extends Database<T> {
@@ -36,8 +37,17 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
         }
     }
 
-    async generateEvents({ initial_date, final_date }: TplEventsParams) {
+    async generateEvents({ initial_date, final_date, event_id }: TplEventsParams) {
         try {
+            let time_id_from_event_id: undefined | number = undefined
+            if (event_id) {
+                const event_date = await sql`select tpl_events from ${sql(this.table)} where id = ${event_id}`;
+                if (event_date) {
+                    initial_date = event_date[0]?.event_date;
+                    final_date = event_date[0]?.event_date
+                    time_id_from_event_id = event_date[0]?.tpl_day_time_id
+                }
+            }
             console.log('Gerando eventos...')
             console.log('periodo: ', initial_date, final_date)
             const brothers_active: vw_brothers_active_to_generate[] = await sql`select * from ${sql('vw_brothers_active_to_generate')}`;
@@ -47,8 +57,9 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
             const qt_days = moment(final_date).diff(initial_date, 'days') + 1;
 
 
-            const times: TplDayTime[] = await sql`select * from ${sql('tpl_day_time')}`
+            let times: TplDayTime[] = await sql`select * from ${sql('tpl_day_time')}`
 
+            if (time_id_from_event_id) times = times.filter(x => x.id == time_id_from_event_id)
 
             let brother_added_id: number[] = []
 
@@ -195,20 +206,26 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
             }
 
             if (tpl_events.length > 0 && initial_date && final_date) {
-                console.log("deletando o periodo antigo..." + initial_date + " a " + final_date)
-                /*      console.log(tpl_events) */
-                const deleted_events = await sql`
-                     delete from ${sql('tpl_events')} 
-                    where event_date between ${moment(initial_date).format('YYYY-MM-DD')} and ${moment(final_date).format('YYYY-MM-DD')} 
-                 `;
+                if (event_id) {
+                    const updated_event = await sql`update ${sql('tpl_events')} set ${sql(tpl_events[0])} where id = ${event_id}`
+                    console.log('atualizando evento', updated_event)
+                } else {
+                    console.log("deletando o periodo antigo..." + initial_date + " a " + final_date)
+                    /*      console.log(tpl_events) */
+                    const deleted_events = await sql`
+                         delete from ${sql('tpl_events')} 
+                        where event_date between ${moment(initial_date).format('YYYY-MM-DD')} and ${moment(final_date).format('YYYY-MM-DD')} 
+                     `;
 
-                console.log(deleted_events.count + " linhas deletadas")
-                console.log("inserindo os eventos no banco de dados...")
-                const created = await sql`
-                     insert into ${sql('tpl_events')} ${sql(tpl_events)} 
-                     returning *
-                 `;
-                console.log(created.count + " linhas inseridas")
+                    console.log(deleted_events.count + " linhas deletadas")
+                    console.log("inserindo os eventos no banco de dados...")
+                    const created = await sql`
+                         insert into ${sql('tpl_events')} ${sql(tpl_events)} 
+                         returning *
+                     `;
+                    console.log(created.count + " linhas inseridas")
+                }
+
             } else {
                 if (tpl_events.length == 0) {
                     console.log("nenhum evento gerado")
@@ -258,6 +275,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
 
             for (let horario_index = 0; horario_index < qt_times; horario_index++) {
                 const period = {
+
                     time: times.find(x => x.id == times_day_ids[horario_index])?.day_time ?? times_day_ids.find(x => x == times_day_ids[horario_index])?.toString() ?? '',
                     pairs: Tpl_Events.filter(x => moment(x.event_date).format('dddd, DD [de] MMMM [de] YYYY') == day && x.tpl_day_time_id == times_day_ids[horario_index]).map(event => {
 
@@ -268,6 +286,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                         const brother_1 = brothers.find(x => x.id == pair[0]);
                         const brother_2 = brothers.find(x => x.id == pair[1]);
                         return {
+                            id: event.id,
                             brother: brother_1?.brother_name,
                             support: brother_2?.brother_name
                         }
