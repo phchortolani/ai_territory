@@ -72,7 +72,6 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
 
                 const qt_times = times_day_ids.length // quntidade de horário para ser gerados
 
-                /*      console.log(times_day_ids) */
 
                 for (let horario_index = 0; horario_index < qt_times; horario_index++) {
 
@@ -105,51 +104,76 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
 
                         let tentatives = 100;
                         while (pair.brother_id_1 == 0 || pair.brother_id_2 == 0) {
-                            let brothers_avaliable_for_this_hour = brothers_ready_for_this_day.filter(x => x.tpl_times?.split(',').includes(String(times_day_ids[horario_index])))
+                            console.log('Iniciando loop para encontrar brothers');
+                            console.log('pair inicial:', pair);
 
+                            let brothers_avaliable_for_this_hour = brothers_ready_for_this_day.filter(x =>
+                                x.tpl_times?.split(',').includes(String(times_day_ids[horario_index]))
+                            );
+                            console.log('Brothers disponíveis para o horário:', brothers_avaliable_for_this_hour.map(x => x.id));
+
+                            if (brothers_avaliable_for_this_hour.length <= 1) {
+                                console.log('Sem brothers disponíveis para o horário:', times_day_ids[horario_index]);
+                                break;
+                            }
                             const brother_1 = brothers_avaliable_for_this_hour[Math.floor(Math.random() * brothers_avaliable_for_this_hour.length)];
                             const brother_2 = brothers_avaliable_for_this_hour[Math.floor(Math.random() * brothers_avaliable_for_this_hour.length)];
-                           
+                            console.log('Brother 1 selecionado:', brother_1.id);
+                            console.log('Brother 2 selecionado:', brother_2.id);
+
                             if (!brother_1 && !brother_2) {
-                                console.log('sem brothers disponíveis para o horário: ' + times_day_ids[horario_index])
+                                console.log('Sem brothers disponíveis para o horário:', times_day_ids[horario_index]);
                                 break;
                             }
 
-                            const brother_scheduled_for_this_day = tpl_events.filter(x => x.event_date == moment(event_date).toDate()).some(x => x.pair?.includes(String(brother_1?.id)) || x.pair?.includes(String(brother_2?.id)))
-                            if (brother_scheduled_for_this_day) continue;
+                            const brother_scheduled_for_this_day = tpl_events.filter(x => x.event_date == moment(event_date).toDate()).some(x => x.pair?.includes(String(brother_1?.id)) || x.pair?.includes(String(brother_2?.id)));
 
-                            if ((!brother_1 && brother_2) || (brother_1 && !brother_2)) {
-                                console.log('encontrou apeneas 1 brother das duplas disponivel')
+                            if (brother_scheduled_for_this_day) {
+                                console.log('Brother já agendado, continuando...');
                                 continue;
                             }
 
-                            if (brother_1?.id == brother_2?.id) continue;
+                            if ((!brother_1 && brother_2) || (brother_1 && !brother_2)) {
+                                console.log('Encontrou apenas um brother das duplas disponível');
+                                continue;
+                            }
+
+                            if (brother_1?.id == brother_2?.id) {
+                                console.log('Brothers selecionados são iguais, continuando...');
+                                continue;
+                            }
 
                             if (brother_added_id.includes(brother_1?.id) || brother_added_id.includes(brother_2?.id)) {
+                                console.log('Brother já adicionado anteriormente, verificando tentativas...');
                                 tentatives--;
+                                console.log('Tentativas restantes:', tentatives);
                                 if (tentatives > 0) {
                                     continue;
                                 } else {
+                                    console.log('Zerando brothers adicionados e reiniciando tentativas');
                                     brother_added_id = [];
                                 }
-
                             }
 
                             if (brother_1.sex == brother_2.sex) {
+                                console.log('Brothers têm o mesmo sexo, adicionando ao par');
                                 pair.brother_id_1 = brother_1?.id;
                                 pair.brother_id_2 = brother_2?.id;
                                 brother_added_id.push(brother_1?.id, brother_2?.id);
+                                console.log('Pair atualizado:', pair);
                                 break;
                             } else {
                                 if (brother_1?.relatives?.split(',').includes(String(brother_2?.id))) {
+                                    console.log('Brothers são parentes, adicionando ao par');
                                     pair.brother_id_1 = brother_1?.id;
                                     pair.brother_id_2 = brother_2?.id;
                                     brother_added_id.push(brother_1?.id, brother_2?.id);
+                                    console.log('Pair atualizado:', pair);
                                     break;
                                 }
                             }
-
                         }
+
 
                         if (pair.brother_id_1 == 0 || pair.brother_id_2 == 0) {
                             console.log('erro ao gerar evento')
