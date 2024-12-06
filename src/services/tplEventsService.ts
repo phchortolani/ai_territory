@@ -165,6 +165,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                                     brother_added_id = [];
                                 }
                             }
+                            
 
                             if (brother_1.sex == brother_2.sex) {
                                 // console.log('Brothers têm o mesmo sexo, adicionando ao par');
