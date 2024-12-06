@@ -20,19 +20,19 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
     async getEvents({ initial_date, final_date }: TplEventsParams) {
         try {
             if (!initial_date || !final_date) {
-                console.log('Buscando todos os eventos...')
+                // console.log('Buscando todos os eventos...')
                 const events: TplEvent[] = await sql`
                 select * from ${sql(this.table)}
             `;
                 return events;
             }
-            console.log('Buscando eventos entre as datas informadas...', initial_date, final_date)
+            // console.log('Buscando eventos entre as datas informadas...', initial_date, final_date)
             const events: TplEvent[] = await sql`
             select * from ${sql(this.table)} where event_date between ${initial_date.toString()} and ${final_date.toString()}
         `;
             return events.map(x => ({ ...x, event_date: moment(x.event_date).add(3, 'hours').toDate() })).sort((a, b) => a.event_date.getTime() - b.event_date.getTime());
         } catch (err) {
-            console.log(err)
+            // console.log(err)
             throw err
         }
     }
@@ -40,16 +40,15 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
     async generateEvents({ initial_date, final_date, event_id }: TplEventsParams) {
         try {
             let time_id_from_event_id: undefined | number = undefined
+            let pairs_from_event_id: undefined | string = undefined
             if (event_id) {
-                const event_date = await sql`select tpl_events from ${sql(this.table)} where id = ${event_id}`;
-                if (event_date) {
-                    initial_date = event_date[0]?.event_date;
-                    final_date = event_date[0]?.event_date
-                    time_id_from_event_id = event_date[0]?.tpl_day_time_id
+                const event_date: TplEvent[] = await sql`select * from ${sql(this.table)} where id = ${event_id}`;
+                if (event_date.length > 0 && event_date[0]?.event_date) {
+                    final_date = initial_date = moment(event_date[0]?.event_date).add(1, 'days').toDate();
+                    pairs_from_event_id = event_date[0]?.pair
                 }
+                time_id_from_event_id = event_date[0]?.tpl_day_time_id
             }
-            console.log('Gerando eventos...')
-            console.log('periodo: ', initial_date, final_date)
             const brothers_active: vw_brothers_active_to_generate[] = await sql`select * from ${sql('vw_brothers_active_to_generate')}`;
             if (!brothers_active) return
 
@@ -57,9 +56,9 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
             const qt_days = moment(final_date).diff(initial_date, 'days') + 1;
 
 
-            let times: TplDayTime[] = await sql`select * from ${sql('tpl_day_time')}`
+            const times: TplDayTime[] = await sql`select * from ${sql('tpl_day_time')}`
 
-            if (time_id_from_event_id) times = times.filter(x => x.id == time_id_from_event_id)
+
 
             let brother_added_id: number[] = []
 
@@ -70,19 +69,19 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                 let event_date_week = moment(event_date).format('ddd').toLowerCase(); // dom seg ter qua qui sex sab
                 if (event_date_week == 'sab') event_date_week = 'sáb';
 
-                console.log('Buscando horários do dia: ', event_date, event_date_week, qt_days)
-                const times_day_ids = times.filter(x => x.day_time.trim().toLowerCase().startsWith(event_date_week.trim().toLowerCase())).map(x => x.id) // 1,2,3,4,5,6,7 etc
+
+                let times_day_ids = times.filter(x => x.day_time.trim().toLowerCase().startsWith(event_date_week.trim().toLowerCase())).map(x => x.id) // 1,2,3,4,5,6,7 etc
+                if (time_id_from_event_id) times_day_ids.filter(x => x == time_id_from_event_id)
                 if (times_day_ids.length == 0) continue;
 
 
-                console.log('Gerando eventos para o dia: ', event_date, event_date_week, times_day_ids.length)
+                // console.log('Gerando eventos para o dia: ', event_date, event_date_week, times_day_ids.length)
 
-                const brothers_ready_for_this_day = brothers_active.filter(x => x.tpl_times?.split(',').some(x => times_day_ids.includes(Number(x))));
+                let brothers_ready_for_this_day = brothers_active.filter(x => x.tpl_times?.split(',').some(x => times_day_ids.includes(Number(x))));
 
                 if (brothers_ready_for_this_day.length == 0) continue;
 
                 const qt_times = times_day_ids.length // quntidade de horário para ser gerados
-
 
                 for (let horario_index = 0; horario_index < qt_times; horario_index++) {
 
@@ -115,71 +114,71 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
 
                         let tentatives = 100;
                         while (pair.brother_id_1 == 0 || pair.brother_id_2 == 0) {
-                            console.log('Iniciando loop para encontrar brothers');
-                            console.log('pair inicial:', pair);
+                            // console.log('Iniciando loop para encontrar brothers');
+                            // console.log('pair inicial:', pair);
 
                             let brothers_avaliable_for_this_hour = brothers_ready_for_this_day.filter(x =>
                                 x.tpl_times?.split(',').includes(String(times_day_ids[horario_index]))
                             );
-                            console.log('Brothers disponíveis para o horário:', brothers_avaliable_for_this_hour.map(x => x.id));
+                            // console.log('Brothers disponíveis para o horário:', brothers_avaliable_for_this_hour.map(x => x.id));
 
                             if (brothers_avaliable_for_this_hour.length <= 1) {
-                                console.log('Sem brothers disponíveis para o horário:', times_day_ids[horario_index]);
+                                // console.log('Sem brothers disponíveis para o horário:', times_day_ids[horario_index]);
                                 break;
                             }
                             const brother_1 = brothers_avaliable_for_this_hour[Math.floor(Math.random() * brothers_avaliable_for_this_hour.length)];
                             const brother_2 = brothers_avaliable_for_this_hour[Math.floor(Math.random() * brothers_avaliable_for_this_hour.length)];
-                            console.log('Brother 1 selecionado:', brother_1.id);
-                            console.log('Brother 2 selecionado:', brother_2.id);
+                            // console.log('Brother 1 selecionado:', brother_1.id);
+                            // console.log('Brother 2 selecionado:', brother_2.id);
 
                             if (!brother_1 && !brother_2) {
-                                console.log('Sem brothers disponíveis para o horário:', times_day_ids[horario_index]);
+                                // console.log('Sem brothers disponíveis para o horário:', times_day_ids[horario_index]);
                                 break;
                             }
 
                             const brother_scheduled_for_this_day = tpl_events.filter(x => x.event_date == moment(event_date).toDate()).some(x => x.pair?.includes(String(brother_1?.id)) || x.pair?.includes(String(brother_2?.id)));
 
                             if (brother_scheduled_for_this_day) {
-                                console.log('Brother já agendado, continuando...');
+                                // console.log('Brother já agendado, continuando...');
                                 continue;
                             }
 
                             if ((!brother_1 && brother_2) || (brother_1 && !brother_2)) {
-                                console.log('Encontrou apenas um brother das duplas disponível');
+                                // console.log('Encontrou apenas um brother das duplas disponível');
                                 continue;
                             }
 
                             if (brother_1?.id == brother_2?.id) {
-                                console.log('Brothers selecionados são iguais, continuando...');
+                                // console.log('Brothers selecionados são iguais, continuando...');
                                 continue;
                             }
 
                             if (brother_added_id.includes(brother_1?.id) || brother_added_id.includes(brother_2?.id)) {
-                                console.log('Brother já adicionado anteriormente, verificando tentativas...');
+                                // console.log('Brother já adicionado anteriormente, verificando tentativas...');
                                 tentatives--;
-                                console.log('Tentativas restantes:', tentatives);
+                                // console.log('Tentativas restantes:', tentatives);
                                 if (tentatives > 0) {
                                     continue;
                                 } else {
-                                    console.log('Zerando brothers adicionados e reiniciando tentativas');
+                                    // console.log('Zerando brothers adicionados e reiniciando tentativas');
                                     brother_added_id = [];
                                 }
                             }
 
                             if (brother_1.sex == brother_2.sex) {
-                                console.log('Brothers têm o mesmo sexo, adicionando ao par');
+                                // console.log('Brothers têm o mesmo sexo, adicionando ao par');
                                 pair.brother_id_1 = brother_1?.id;
                                 pair.brother_id_2 = brother_2?.id;
                                 brother_added_id.push(brother_1?.id, brother_2?.id);
-                                console.log('Pair atualizado:', pair);
+                                // console.log('Pair atualizado:', pair);
                                 break;
                             } else {
                                 if (brother_1?.relatives?.split(',').includes(String(brother_2?.id))) {
-                                    console.log('Brothers são parentes, adicionando ao par');
+                                    // console.log('Brothers são parentes, adicionando ao par');
                                     pair.brother_id_1 = brother_1?.id;
                                     pair.brother_id_2 = brother_2?.id;
                                     brother_added_id.push(brother_1?.id, brother_2?.id);
-                                    console.log('Pair atualizado:', pair);
+                                    // console.log('Pair atualizado:', pair);
                                     break;
                                 }
                             }
@@ -187,7 +186,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
 
 
                         if (pair.brother_id_1 == 0 || pair.brother_id_2 == 0) {
-                            console.log('erro ao gerar evento')
+                            // console.log('erro ao gerar evento')
                             break;
                         }
                         const event: TplEvent = {
@@ -207,35 +206,37 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
 
             if (tpl_events.length > 0 && initial_date && final_date) {
                 if (event_id) {
-                    const updated_event = await sql`update ${sql('tpl_events')} set ${sql(tpl_events[0])} where id = ${event_id}`
-                    console.log('atualizando evento', updated_event)
+                    const random_tpl_event = tpl_events[Math.floor(Math.random() * tpl_events.length)];
+                    random_tpl_event.event_date = random_tpl_event.event_date;
+                    const updated_event = await sql`update ${sql('tpl_events')} set ${sql(random_tpl_event)} where id = ${event_id}`
+                    // console.log('atualizando evento', updated_event)
                 } else {
-                    console.log("deletando o periodo antigo..." + initial_date + " a " + final_date)
-                    /*      console.log(tpl_events) */
+                    // console.log("deletando o periodo antigo..." + initial_date + " a " + final_date)
+                    /*     // console.log(tpl_events) */
                     const deleted_events = await sql`
                          delete from ${sql('tpl_events')} 
                         where event_date between ${moment(initial_date).format('YYYY-MM-DD')} and ${moment(final_date).format('YYYY-MM-DD')} 
                      `;
 
-                    console.log(deleted_events.count + " linhas deletadas")
-                    console.log("inserindo os eventos no banco de dados...")
+                    // console.log(deleted_events.count + " linhas deletadas")
+                    // console.log("inserindo os eventos no banco de dados...")
                     const created = await sql`
                          insert into ${sql('tpl_events')} ${sql(tpl_events)} 
                          returning *
                      `;
-                    console.log(created.count + " linhas inseridas")
+                    // console.log(created.count + " linhas inseridas")
                 }
 
             } else {
                 if (tpl_events.length == 0) {
-                    console.log("nenhum evento gerado")
+                    // console.log("nenhum evento gerado")
                 } else console.log("initial_date ou final_date estão indefinidos.");
             }
 
 
             return tpl_events
         } catch (err) {
-            console.log(err)
+            // console.log(err)
             throw err
         }
 
@@ -298,7 +299,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
             retorno.push({ date: day, periods: periods as any })
         })
 
-        /*    console.log(processed_events_days) */
+        /*   // console.log(processed_events_days) */
 
         return retorno.filter(x => x.periods.length > 0)
     }
