@@ -62,6 +62,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
 
             let brother_added_id: number[] = []
 
+
             const tpl_events: TplEvent[] = []
 
             for (let i = 0; i < qt_days; i++) {
@@ -153,7 +154,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                                 continue;
                             }
 
-                            if (brother_added_id.includes(brother_1?.id) || brother_added_id.includes(brother_2?.id)) {
+                            if (brother_added_id.includes(brother_1?.id) || brother_added_id.includes(brother_2?.id) || pairs_from_event_id?.split(',').some(x => Number(x) == brother_1?.id) || pairs_from_event_id?.split(',').some(x => Number(x) == brother_2?.id)) {
                                 // console.log('Brother já adicionado anteriormente, verificando tentativas...');
                                 tentatives--;
                                 // console.log('Tentativas restantes:', tentatives);
@@ -169,7 +170,8 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                                 // console.log('Brothers têm o mesmo sexo, adicionando ao par');
                                 pair.brother_id_1 = brother_1?.id;
                                 pair.brother_id_2 = brother_2?.id;
-                                brother_added_id.push(brother_1?.id, brother_2?.id);
+                                brother_added_id.push(brother_1?.id);
+                                brother_added_id.push(brother_2?.id);
                                 // console.log('Pair atualizado:', pair);
                                 break;
                             } else {
@@ -177,8 +179,8 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                                     // console.log('Brothers são parentes, adicionando ao par');
                                     pair.brother_id_1 = brother_1?.id;
                                     pair.brother_id_2 = brother_2?.id;
-                                    brother_added_id.push(brother_1?.id, brother_2?.id);
-                                    // console.log('Pair atualizado:', pair);
+                                    brother_added_id.push(brother_1?.id);
+                                    brother_added_id.push(brother_2?.id);
                                     break;
                                 }
                             }
