@@ -43,9 +43,15 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
             let pairs_from_event_id: undefined | string = undefined
             if (event_id) {
                 const event_date: TplEvent[] = await sql`select * from ${sql(this.table)} where id = ${event_id}`;
-                if (event_date.length > 0 && event_date[0]?.event_date) {
-                    final_date = initial_date = moment(event_date[0]?.event_date).add(1, 'days').toDate();
+                if (!!event_date) {
+                    if (event_date[0]?.event_date) {
+                        const date = event_date[0]?.event_date
+                        final_date = date
+                        initial_date = date
+                    }
+
                     pairs_from_event_id = event_date[0]?.pair
+                    console.log('Gerando eventos a partir do evento: ', initial_date)
                 }
                 time_id_from_event_id = event_date[0]?.tpl_day_time_id
             }
@@ -65,12 +71,13 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
 
             const tpl_events: TplEvent[] = []
 
+            console.log('Gerando eventos entre as datas informadas...', initial_date, final_date)
             for (let i = 0; i < qt_days; i++) {
-                const event_date = moment(initial_date).add(i, 'days').format('YYYY-MM-DD'); // yyyy-mm-dd
+                const event_date = moment(initial_date).add(i, 'days').add(3, 'hours').format('YYYY-MM-DD'); // yyyy-mm-dd
                 let event_date_week = moment(event_date).format('ddd').toLowerCase(); // dom seg ter qua qui sex sab
                 if (event_date_week == 'sab') event_date_week = 'sáb';
 
-
+                console.log('Buscando times para o dia: ', event_date, event_date_week)
                 let times_day_ids = times.filter(x => x.day_time.trim().toLowerCase().startsWith(event_date_week.trim().toLowerCase())).map(x => x.id) // 1,2,3,4,5,6,7 etc
                 if (time_id_from_event_id) times_day_ids.filter(x => x == time_id_from_event_id)
                 if (times_day_ids.length == 0) continue;
@@ -154,7 +161,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                                 continue;
                             }
 
-                            if (brother_added_id.includes(brother_1?.id) || brother_added_id.includes(brother_2?.id) || pairs_from_event_id?.split(',').some(x => Number(x) == brother_1?.id) || pairs_from_event_id?.split(',').some(x => Number(x) == brother_2?.id)) {
+                            if (brother_added_id.includes(brother_1?.id) || brother_added_id.includes(brother_2?.id)) {
                                 // console.log('Brother já adicionado anteriormente, verificando tentativas...');
                                 tentatives--;
                                 // console.log('Tentativas restantes:', tentatives);
@@ -208,9 +215,16 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
             }
 
             if (tpl_events.length > 0 && initial_date && final_date) {
-                if (event_id) {
-                    const random_tpl_event = tpl_events[Math.floor(Math.random() * tpl_events.length)];
+                if (event_id && event_id > 0) {
+                    let random_tpl_event = tpl_events[Math.floor(Math.random() * tpl_events.length)];
+                    console.log('atualizando evento para a data:', initial_date)
                     random_tpl_event.event_date = initial_date;
+
+                    if (!random_tpl_event && tpl_events.length > 0) {
+                        random_tpl_event = tpl_events[0];
+                    }
+
+
                     const updated_event = await sql`update ${sql('tpl_events')} set ${sql(random_tpl_event)} where id = ${event_id}`
                     // console.log('atualizando evento', updated_event)
                 } else {
