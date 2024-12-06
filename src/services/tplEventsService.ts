@@ -165,7 +165,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
                                     brother_added_id = [];
                                 }
                             }
-                            
+
 
                             if (brother_1.sex == brother_2.sex) {
                                 // console.log('Brothers têm o mesmo sexo, adicionando ao par');
@@ -210,7 +210,7 @@ export class TplEventsService<T = TplEvent> extends Database<T> {
             if (tpl_events.length > 0 && initial_date && final_date) {
                 if (event_id) {
                     const random_tpl_event = tpl_events[Math.floor(Math.random() * tpl_events.length)];
-                    random_tpl_event.event_date = random_tpl_event.event_date;
+                    random_tpl_event.event_date = initial_date;
                     const updated_event = await sql`update ${sql('tpl_events')} set ${sql(random_tpl_event)} where id = ${event_id}`
                     // console.log('atualizando evento', updated_event)
                 } else {
