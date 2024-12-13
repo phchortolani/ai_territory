@@ -5,6 +5,8 @@ import { Campaign } from '../models/campaign';
 import { ISchedule } from '../dtos/schedule';
 import { ReturnSolicitationDto } from '../dtos/returnSolicitation';
 import moment from 'moment';
+import { UserLogService } from '../services/userLogService';
+import { User } from '../models/user';
 
 const path = '/rounds'
 
@@ -92,11 +94,16 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
         try {
             const { round_id } = request.params as any
             const { status } = request.body as { status: number }
+            const user = request.user as User;
 
             if (!round_id) return reply.status(400).send('Para atualizar a rodada é necessário informar o numero na propriedade "round_id"')
             const MarkedAsDoneResult = await RoundsService.MarkRoundAsDone(round_id, status);
 
-            if (MarkedAsDoneResult) return reply.status(200).send(MarkedAsDoneResult)
+            if (MarkedAsDoneResult) {
+                await new UserLogService({ user_id: user.id!, action: `update campaign with success.`, origin: path, description: JSON.stringify({ round_id, status }) }).log();
+                return reply.status(200).send(MarkedAsDoneResult)
+            }
+            await new UserLogService({ user_id: user.id!, action: `update campaign with fail.`, origin: path }).log();
             return reply.status(502).send(`Não foi possível atualizar a rodada.`)
         } catch (err) {
             return reply.status(500).send(err)

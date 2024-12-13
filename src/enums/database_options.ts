@@ -12,4 +12,5 @@ export type database_options = {
     | 'tpl_day_time'
     | 'tpl_events'
     | 'users'
+    | 'user_log'
 }
