@@ -38,8 +38,9 @@ server.register(cors, {
 });
 
 server.register(jwt, {
-    secret: 'S3Cr3TAiTab', // Substitua por uma chave segura
+    secret: process.env.JWT_SECRET!,
 });
+
 
 const port = process.env.PORT ?? 3333;
 
