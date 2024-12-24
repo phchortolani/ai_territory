@@ -150,6 +150,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
         }
     })
 
+    
     server.get(`${path}/sendReturnInfoMail`, async (request, reply) => {
         try {
             await sendReturnInfoMail()
