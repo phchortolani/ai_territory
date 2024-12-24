@@ -269,20 +269,27 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
             if (ToScheduleRounds && ToScheduleRounds.length > 0) {
                 console.log('Efetuando o agendamento...')
+                const territories_infos: ia_info_territory[] = await sql`	select t.id,vlj.last_schedule,t.house_numbers from vw_last_job vlj 
+                join territories t on vlj.territory_id = t.id where vlj.territory_id in ${sql(schedule.territories)} order by vlj.last_schedule`
+
                 const RoundsCreated: Rounds[] = await sql`insert into ${sql(this.table)} ${sql(ToScheduleRounds)} RETURNING *`
                 if (!!RoundsCreated) {
                     console.log(`${RoundsCreated?.length ?? 0} Territórios agendados a partir de ${moment(schedule.first_day).format("DD-MM-YYYY")} ✅ 🎉`)
 
-                    const quantity_house: any = await sql`select sum(t.house_numbers) from territories t where id in ${sql(schedule.territories)};`.then(x => x[0].sum)
+                    const quantity_house: any = territories_infos.reduce((acc, cur) => acc += cur?.house_numbers ?? 0, 0)
 
                     const day = moment(schedule.first_day).utc().format('dddd').toLowerCase().charAt(0).toUpperCase() + moment(schedule.first_day).utc().format('dddd').slice(1);
 
                     let formattedData = `*${day}*\n`
+                    const first_day = moment(RoundsCreated[0].first_day).utc().format('DD-MM-YYYY')
+                    const last_day = moment(RoundsCreated[0].last_day).utc().format('DD-MM-YYYY')
 
-                    formattedData += `1ª Saída: *${moment(RoundsCreated[0].first_day).utc().format('DD-MM-YYYY')}* | 2ª Saída: *${moment(RoundsCreated[0].last_day).utc().format('DD-MM-YYYY')}*\n`;
+                    formattedData += `Saída: *${first_day}* ${last_day != first_day ? `| 2ª Saída: *${last_day}*` : ''}\n`;
                     formattedData += `Territórios: *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n`;
-                    if (iaTerritoriesInfo.length > 0) {
-                        iaTerritoriesInfo.filter(x => schedule.territories?.includes(x.id)).sort((a, b) => a.id - b.id).forEach(info => {
+
+                    
+                    if (territories_infos.length > 0) {
+                        territories_infos.filter(x => schedule.territories?.includes(x.id)).sort((a, b) => a.id - b.id).forEach(info => {
                             formattedData += `T.${info.id} - Última vez trabalhado: *${moment(info.last_schedule).utc().format('DD-MM-YYYY')}*\n`;
                         })
                     }

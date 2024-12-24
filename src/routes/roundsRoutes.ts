@@ -7,6 +7,7 @@ import { ReturnSolicitationDto } from '../dtos/returnSolicitation';
 import moment from 'moment';
 import { UserLogService } from '../services/userLogService';
 import { User } from '../models/user';
+import { sendReturnInfoMail } from '../services/sendGridService';
 
 const path = '/rounds'
 
@@ -148,6 +149,17 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
             return reply.status(500).send()
         }
     })
+
+    server.get(`${path}/sendReturnInfoMail`, async (request, reply) => {
+        try {
+            await sendReturnInfoMail()
+            return reply.status(200).send(true)
+        } catch (err) {
+            return reply.status(500).send()
+        }
+    })
+
+
 
     server.get(`${path}/getS13`, async (request, reply) => {
         await request.jwtVerify();
