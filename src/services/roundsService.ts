@@ -14,6 +14,10 @@ import { checkNearTerritories, checkNearTerritoriesV2, checkQuantityIsValid, get
 import { getDefaultPrompt } from "../utils/getPrompt";
 import { IaExampleHistory } from "../models/IA/ia_example_history";
 
+interface info_send_grid_devolution {
+    name: string,
+    leaders: { leader_name: string }[]
+}
 export class RoundsService<T = Rounds> extends Database<T> {
 
     constructor() {
@@ -114,31 +118,31 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
     async ToScheduleRaiz(schedule: ISchedule, leader_id: number) {
 
-      /*   let last_day: Date | null = moment(schedule.first_day).toDate();
-
-        if (moment(schedule.first_day).isoWeekday() !== 6 && schedule.repeat_next_week) {
-            last_day = moment(schedule.first_day).add(7, 'days').toDate();
-        }
-
-        const expected_return = last_day;
-
-        if (schedule.territories?.some(x => x == 0)) throw new Error('O agendamento possui territórios com o ID 0');
-
-        const rounds = ((await this.list()) as Rounds[]).filter(x => schedule.territories?.includes(x.territory_id));
-
-        const DataInRange = rounds.filter(x =>
-            moment(x.first_day).isSame(new Date(schedule.first_day)) ||
-            moment(x.last_day).isSame(last_day) ||
-            moment(x.last_day).isSameOrAfter(new Date(schedule.first_day))
-            || x.status == 2)
-            .map(x => x.territory_id)
-
-
-        if (DataInRange.length > 0) {
-            console.log('Não foi possível seguir com o agendamento.')
-            throw new Error('O agendamento não pode ser concluído visto que esses territórios já possuem agendamento nessa mesma data. Territórios: ' + DataInRange.join(','));
-        }
- */
+        /*   let last_day: Date | null = moment(schedule.first_day).toDate();
+  
+          if (moment(schedule.first_day).isoWeekday() !== 6 && schedule.repeat_next_week) {
+              last_day = moment(schedule.first_day).add(7, 'days').toDate();
+          }
+  
+          const expected_return = last_day;
+  
+          if (schedule.territories?.some(x => x == 0)) throw new Error('O agendamento possui territórios com o ID 0');
+  
+          const rounds = ((await this.list()) as Rounds[]).filter(x => schedule.territories?.includes(x.territory_id));
+  
+          const DataInRange = rounds.filter(x =>
+              moment(x.first_day).isSame(new Date(schedule.first_day)) ||
+              moment(x.last_day).isSame(last_day) ||
+              moment(x.last_day).isSameOrAfter(new Date(schedule.first_day))
+              || x.status == 2)
+              .map(x => x.territory_id)
+  
+  
+          if (DataInRange.length > 0) {
+              console.log('Não foi possível seguir com o agendamento.')
+              throw new Error('O agendamento não pode ser concluído visto que esses territórios já possuem agendamento nessa mesma data. Territórios: ' + DataInRange.join(','));
+          }
+   */
 
         const available_territories = await this.getRoundsByRangeofDate(15)
 
@@ -287,7 +291,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     formattedData += `Saída: *${first_day}* ${last_day != first_day ? `| 2ª Saída: *${last_day}*` : ''}\n`;
                     formattedData += `Territórios: *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n`;
 
-                    
+
                     if (territories_infos.length > 0) {
                         territories_infos.filter(x => schedule.territories?.includes(x.id)).sort((a, b) => a.id - b.id).forEach(info => {
                             formattedData += `T.${info.id} - Última vez trabalhado: *${moment(info.last_schedule).utc().format('DD-MM-YYYY')}*\n`;
@@ -375,6 +379,5 @@ export class RoundsService<T = Rounds> extends Database<T> {
             throw err
         }
     }
-
 
 }

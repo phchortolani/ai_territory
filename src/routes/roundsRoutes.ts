@@ -150,11 +150,20 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
         }
     })
 
-    
+
+
+
     server.get(`${path}/sendReturnInfoMail`, async (request, reply) => {
         try {
-            await sendReturnInfoMail()
-            return reply.status(200).send(true)
+            const devolutions = await RoundsService.getReturnSolicitation()
+
+            if (devolutions.length == 0) {
+                await new UserLogService({ user_id: 1, action: 'sendReturnInfoMail with success.', origin: 'cron', description: 'Nenhum retorno será necessário.' }).log();
+                return reply.status(200).send("Nenhum retorno será necessário.")
+            }
+
+            const ret2 = await sendReturnInfoMail(devolutions)
+            return reply.status(200).send(ret2)
         } catch (err) {
             return reply.status(500).send()
         }

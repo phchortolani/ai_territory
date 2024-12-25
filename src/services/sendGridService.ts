@@ -1,11 +1,11 @@
 
 import sgMail from '@sendgrid/mail'
+import { ReturnSolicitationDto } from '../dtos/returnSolicitation';
+import { UserLogService } from './userLogService';
 
 sgMail.setApiKey(process.env.SENDGRID_API_KEY!)
 
-
-
-export async function sendReturnInfoMail() {
+export async function sendReturnInfoMail(devolution: ReturnSolicitationDto[]) {
     /*   const msg = {
           to: 'phchortolani@gmail.com', // Change to your recipient
           from: 'aitab@lanisystems.com.br', // Change to your verified sender
@@ -22,28 +22,34 @@ export async function sendReturnInfoMail() {
               console.error(error)
           })
    */
-    sendMailWithTemplate('phchortolani@gmail.com', 'd-2fb1d40560e14d96b9e001fada87e2dd', {
+    const leaders_devolutions = devolution.map(x => {
+        return { leader_name: x.leader.name + ' - ' + x?.devolutions.map(y => y.territories.map(z => z.id).join(', ')).join(', ') }
+    })
+
+    return await sendMailWithTemplate('phchortolani@gmail.com', 'd-2fb1d40560e14d96b9e001fada87e2dd', {
         name: 'Paulo',
-        leaders: [
-            { leader_name: 'Geronimo - 1 ,2, 3 ,4' },
-            { leader_name: 'Aléx -  8 ,5, 10 ,12' },
-            { leader_name: 'Tonon - 45,42,2' }
-        ]
+        leaders: leaders_devolutions
     })
 }
-export async function sendMailWithTemplate(to: string, templateId: string, dynamicData: Record<string, unknown>) {
-    const msg = {
-        to, // Destinatário
-        from: 'aitab@lanisystems.com.br', // Remetente verificado no SendGrid
-        templateId, // ID do template do SendGrid
-        dynamic_template_data: dynamicData, // Dados dinâmicos para o template
-    };
-
+export async function sendMailWithTemplate(to: string, templateId: string, dynamicData: Record<string, unknown>, origin: string = 'cron', user: number = 1) {
     try {
-        await sgMail.send(msg);
-        console.log('Email enviado com sucesso!');
+        const msg = {
+            to,
+            from: 'aitab@lanisystems.com.br',
+            templateId,
+            dynamic_template_data: dynamicData,
+        };
+
+        const mail_info = await sgMail.send(msg);
+
+        const mail_info_string = JSON.stringify(mail_info, null, 2);
+
+        await new UserLogService({ user_id: user, action: `sended email with success.`, origin: origin, description: mail_info_string }).log();
+
+        return 'Email enviado com sucesso!';
     } catch (error) {
         console.error('Erro ao enviar email:', error);
+        return `Erro ao enviar email: ${error}`;
 
     }
 }
