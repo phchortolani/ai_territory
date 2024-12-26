@@ -4,6 +4,7 @@ import { ChallengeToken } from '../models/Whatsapp/ChallengeToken';
 import moment from 'moment';
 import { IWhatsappMessage } from '../models/Whatsapp/whatsapp_message';
 import { WhatsAppWebhookBody } from '../models/Whatsapp/whatsappMessageBody';
+import { UserLogService } from '../services/userLogService';
 
 const path = '/whatsapp'
 
@@ -37,6 +38,8 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
     // Endpoint para receber mensagens do WhatsApp
     server.post(`${path}/webhook`, async (request, reply) => {
         const body = request.body as WhatsAppWebhookBody;
+
+        await new UserLogService({ user_id: 1, action: 'receive message from whatsapp.', origin: path, description: JSON.stringify(body) }).log();
 
         if (body.field !== 'messages' || body.value.messaging_product !== 'whatsapp') {
             return reply.status(400).send('Invalid request format');
