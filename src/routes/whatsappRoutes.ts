@@ -39,23 +39,39 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
     server.post(`${path}/webhook`, async (request, reply) => {
         const body = request.body as WhatsAppWebhookBody;
 
-        await new UserLogService({ user_id: 1, action: 'receive message from whatsapp.', origin: path, description: JSON.stringify(body) }).log();
+        await new UserLogService({
+            user_id: 1,
+            action: 'receive message from whatsapp.',
+            origin: path,
+            description: JSON.stringify(body)
+        }).log();
 
-        if (body.field !== 'messages' || body.value.messaging_product !== 'whatsapp') {
+        if (body.object !== 'whatsapp_business_account') {
+            return reply.status(400).send('Invalid object in request');
+        }
+
+        // Validating that 'entry' and 'changes' exist and have messages
+        if (!body.entry || body.entry.length === 0 || !body.entry[0].changes || body.entry[0].changes.length === 0) {
             return reply.status(400).send('Invalid request format');
         }
-        for (const message of body.value.messages) {
 
-            const formattedMessage: IWhatsappMessage = {
-                message_id: message.id,
-                from_number: message.from,
-                timestamp: message.timestamp,
-                message_text: message.text?.body || '',
-                message_type: message.type,
-                received_at: new Date()
-            };
+        for (const change of body.entry[0].changes) {
+            if (change.field !== 'messages' || change.value.messaging_product !== 'whatsapp') {
+                return reply.status(400).send('Invalid message format');
+            }
 
-            await whatsappService.processMessage(formattedMessage);
+            for (const message of change.value.messages) {
+                const formattedMessage: IWhatsappMessage = {
+                    message_id: message.id,
+                    from_number: message.from,
+                    timestamp: message.timestamp,
+                    message_text: message.text?.body || '',
+                    message_type: message.type,
+                    received_at: new Date()
+                };
+
+                await whatsappService.processMessage(formattedMessage);
+            }
         }
 
         return reply.status(200).send('Message received');
