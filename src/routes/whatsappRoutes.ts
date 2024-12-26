@@ -71,6 +71,8 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                 };
 
                 await whatsappService.processMessage(formattedMessage);
+
+                await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
             }
         }
 
