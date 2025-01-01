@@ -119,7 +119,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                             await whatsappService.processMessage(formattedMessage);
 
                             log_message = 'message processed with success.';
-                            await new UserLogService({ user_id: 1, action: 'message id: ' + (message?.id ?? '') + ' received with success.', origin: path }).log();
+                            await new UserLogService({ user_id: 1, action: 'message  received with success.', origin: path, description: JSON.stringify(message.id) }).log();
                             log_message = 'sending message received with success.';
                             await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
                             log_message = 'message received with success.';
