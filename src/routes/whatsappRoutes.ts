@@ -42,14 +42,9 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
         try {
             log_message = 'receive event from webhook whatsapp.';
             const body = request.body as WhatsAppWebhookBody;
-            log_message = 'validating object in request.';
-            await new UserLogService({
-                user_id: 1,
-                action: 'receive event from webhook whatsapp.',
-                origin: path,
+            log_message = 'save in log that received event from webhook whatsapp: ' + JSON.stringify(body) + '.';
 
-            }).log();
-            log_message = 'log created.';
+            await new UserLogService({ user_id: 1, action: 'receive event from webhook whatsapp.', origin: path }).log();
 
             log_message = 'validating object in request.';
             if (body?.object !== 'whatsapp_business_account') {
@@ -65,14 +60,14 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
             log_message = 'Validating that entry and changes exist and have messages.';
             // Validating that 'entry' and 'changes' exist and have messages
-            if (!body.entry || body.entry.length === 0 || !body.entry[0].changes || body.entry[0].changes.length === 0) {
+            if (!body?.entry || body?.entry?.length === 0 || !body?.entry[0]?.changes || body?.entry[0]?.changes?.length === 0) {
                 log_message = 'Invalid object in request';
                 await new UserLogService({ user_id: 1, action: 'Invalid request format.', origin: path })
                 return reply.status(400).send('Invalid request format');
             }
 
             log_message = 'validating if is a message or status change';
-            for (const change of body.entry[0].changes) {
+            for (const change of body?.entry[0]?.changes) {
 
                 if (change.field !== 'messages' || change.value.messaging_product !== 'whatsapp') {
                     log_message = 'Invalid message format';
