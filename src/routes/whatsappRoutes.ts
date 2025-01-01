@@ -5,6 +5,7 @@ import moment from 'moment';
 import { IWhatsappMessage } from '../models/Whatsapp/whatsapp_message';
 import { WhatsAppWebhookBody } from '../models/Whatsapp/whatsappMessageBody';
 import { UserLogService } from '../services/userLogService';
+import { log } from 'console';
 
 const path = '/whatsapp'
 
@@ -41,13 +42,15 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
         try {
             log_message = 'receive event from webhook whatsapp.';
             const body = request.body as WhatsAppWebhookBody;
-
+            log_message = 'validating object in request.';
             await new UserLogService({
                 user_id: 1,
                 action: 'receive event from webhook whatsapp.',
                 origin: path,
             }).log();
+            log_message = 'log created.';
 
+            log_message = 'validating object in request.';
             if (body.object !== 'whatsapp_business_account') {
                 await new UserLogService({
                     user_id: 1,
@@ -58,6 +61,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                 return reply.status(400).send('Invalid object in request');
             }
 
+            log_message = 'Validating that entry and changes exist and have messages.';
             // Validating that 'entry' and 'changes' exist and have messages
             if (!body.entry || body.entry.length === 0 || !body.entry[0].changes || body.entry[0].changes.length === 0) {
                 log_message = 'Invalid object in request';
@@ -65,7 +69,9 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                 return reply.status(400).send('Invalid request format');
             }
 
+            log_message = 'validating if is a message or status change';
             for (const change of body.entry[0].changes) {
+
                 if (change.field !== 'messages' || change.value.messaging_product !== 'whatsapp') {
                     log_message = 'Invalid message format';
                     await new UserLogService({ user_id: 1, action: 'Invalid message format.', origin: path })
@@ -99,25 +105,30 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                     log_message = 'status updated';
                 } else {
                     // only message change
-                    for (const message of change.value.messages) {
-                        const formattedMessage: IWhatsappMessage = {
-                            message_id: message.id,
-                            from_number: message.from,
-                            timestamp: message.timestamp,
-                            message_text: message.text?.body || '',
-                            message_type: message.type,
-                            received_at: new Date(),
-                        };
-                        log_message = 'processing message: ' + JSON.stringify(formattedMessage) + '.';
+                    log_message = 'only message change';
+                    if (change.value.messages) {
+                        log_message = 'processing messages init.';
+                        for (const message of change.value.messages) {
+                            const formattedMessage: IWhatsappMessage = {
+                                message_id: message.id,
+                                from_number: message.from,
+                                timestamp: message.timestamp,
+                                message_text: message.text?.body || '',
+                                message_type: message.type,
+                                received_at: new Date(),
+                            };
+                            log_message = 'processing message: ' + JSON.stringify(formattedMessage) + '.';
 
-                        await whatsappService.processMessage(formattedMessage);
+                            await whatsappService.processMessage(formattedMessage);
 
-                        log_message = 'message processed with success.';
-                        await new UserLogService({ user_id: 1, action: 'message id: ' + (message?.id ?? '') + ' received with success.', origin: path }).log();
-                        log_message = 'sending message received with success.';
-                        await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
-                        log_message = 'message received with success.';
+                            log_message = 'message processed with success.';
+                            await new UserLogService({ user_id: 1, action: 'message id: ' + (message?.id ?? '') + ' received with success.', origin: path }).log();
+                            log_message = 'sending message received with success.';
+                            await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
+                            log_message = 'message received with success.';
+                        }
                     }
+
                 }
             }
 
