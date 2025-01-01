@@ -37,8 +37,9 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
     // Endpoint para receber mensagens do WhatsApp
     server.post(`${path}/webhook`, async (request, reply) => {
-
+        let log_message = '';
         try {
+            log_message = 'receive event from webhook whatsapp.';
             const body = request.body as WhatsAppWebhookBody;
 
             await new UserLogService({
@@ -53,41 +54,46 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                     action: 'Invalid object in request.',
                     origin: path,
                 }).log();
-
+                log_message = 'Invalid object in request';
                 return reply.status(400).send('Invalid object in request');
             }
 
             // Validating that 'entry' and 'changes' exist and have messages
             if (!body.entry || body.entry.length === 0 || !body.entry[0].changes || body.entry[0].changes.length === 0) {
+                log_message = 'Invalid object in request';
                 await new UserLogService({ user_id: 1, action: 'Invalid request format.', origin: path })
                 return reply.status(400).send('Invalid request format');
             }
 
             for (const change of body.entry[0].changes) {
                 if (change.field !== 'messages' || change.value.messaging_product !== 'whatsapp') {
+                    log_message = 'Invalid message format';
                     await new UserLogService({ user_id: 1, action: 'Invalid message format.', origin: path })
                     return reply.status(400).send('Invalid message format');
                 }
 
                 //validating if is a message or status change
-
+                log_message = 'validating if is a message or status change';
                 if ((change?.value?.statuses?.length ?? 0) > 0) {
                     // only status change
+                    log_message = 'only status change';
                     const messages_status_change = change?.value?.statuses.map(status => {
                         return {
                             message_id: status.id
                         }
                     })
 
+                    log_message = 'updating status from messages: ' + JSON.stringify(messages_status_change.map(message => message.message_id).join(', ')) + '.';
                     messages_status_change.forEach(async message => {
                         await whatsappService.updateStatus(message.message_id, change.value.statuses[0].status);
                     })
+
                     await new UserLogService({
                         user_id: 1,
                         action: 'update status from messages: ' + JSON.stringify(messages_status_change.map(message => message.message_id).join(', ')) + '.',
                         origin: path,
                     }).log();
-
+                    log_message = 'status updated';
                 } else {
                     // only message change
                     for (const message of change.value.messages) {
@@ -99,12 +105,15 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                             message_type: message.type,
                             received_at: new Date(),
                         };
+                        log_message = 'processing message: ' + JSON.stringify(formattedMessage) + '.';
 
                         await whatsappService.processMessage(formattedMessage);
 
+                        log_message = 'message processed with success.';
                         await new UserLogService({ user_id: 1, action: 'message id: ' + (message?.id ?? '') + ' received with success.', origin: path }).log();
-
+                        log_message = 'sending message received with success.';
                         await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
+                        log_message = 'message received with success.';
                     }
                 }
             }
@@ -112,6 +121,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
             return reply.status(200).send('Message received');
         } catch (error: any) {
             console.error('Erro ao receber mensagem:', JSON.stringify(error));
+            console.error('log_message:', log_message);
             await new UserLogService({ user_id: 1, action: 'Error receiving message.', origin: path, description: JSON.stringify(error) }).log();
             await whatsappService.sendMessage('5511957886697', 'Erro ao receber webhook do whatsapp: ' + JSON.stringify(error));
             return reply.status(500).send('Internal Server Error');
