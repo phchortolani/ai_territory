@@ -47,11 +47,13 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                 user_id: 1,
                 action: 'receive event from webhook whatsapp.',
                 origin: path,
+
             }).log();
             log_message = 'log created.';
 
             log_message = 'validating object in request.';
-            if (body.object !== 'whatsapp_business_account') {
+            if (body?.object !== 'whatsapp_business_account') {
+                log_message = 'Invalid object in request init.';
                 await new UserLogService({
                     user_id: 1,
                     action: 'Invalid object in request.',
