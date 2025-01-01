@@ -71,9 +71,9 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
                 //validating if is a message or status change
 
-                if (change?.value?.statuses?.length > 0) {
+                if ((change?.value?.statuses?.length ?? 0) > 0) {
                     // only status change
-                    const messages_status_change = change.value.statuses.map(status => {
+                    const messages_status_change = change?.value?.statuses.map(status => {
                         return {
                             message_id: status.id
                         }
@@ -102,7 +102,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
                         await whatsappService.processMessage(formattedMessage);
 
-                        await new UserLogService({ user_id: 1, action: 'message id: ' + message.id + ' received with success.', origin: path }).log();
+                        await new UserLogService({ user_id: 1, action: 'message id: ' + (message?.id ?? '') + ' received with success.', origin: path }).log();
 
                         await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
                     }
@@ -111,9 +111,9 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
             return reply.status(200).send('Message received');
         } catch (error: any) {
-            console.error('Erro ao receber mensagem:', error.message);
-            await new UserLogService({ user_id: 1, action: 'Error receiving message.', origin: path, description: error.message }).log();
-            await whatsappService.sendMessage('5511957886697', 'Erro ao receber webhook do whatsapp: ' + error.message);
+            console.error('Erro ao receber mensagem:', JSON.stringify(error));
+            await new UserLogService({ user_id: 1, action: 'Error receiving message.', origin: path, description: JSON.stringify(error) }).log();
+            await whatsappService.sendMessage('5511957886697', 'Erro ao receber webhook do whatsapp: ' + JSON.stringify(error));
             return reply.status(500).send('Internal Server Error');
         }
 
