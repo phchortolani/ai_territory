@@ -59,4 +59,14 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
         }
     }
 
+    async updateStatus(message_id: string, status: string) {
+        try {
+            const result = await sql`update ${sql('whatsapp_messages')} set status = ${status} where message_id = ${message_id}`;
+            return result;
+        } catch (error) {
+            console.error('Erro ao atualizar status:', error);
+            throw error;
+        }
+    }
+
 }

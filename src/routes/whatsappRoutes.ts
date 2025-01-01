@@ -41,9 +41,8 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
         await new UserLogService({
             user_id: 1,
-            action: 'receive message from whatsapp.',
+            action: 'receive event from webhook whatsapp.',
             origin: path,
-            description: JSON.stringify(body)
         }).log();
 
         if (body.object !== 'whatsapp_business_account') {
@@ -60,20 +59,50 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                 return reply.status(400).send('Invalid message format');
             }
 
-            for (const message of change.value.messages) {
-                const formattedMessage: IWhatsappMessage = {
-                    message_id: message.id,
-                    from_number: message.from,
-                    timestamp: message.timestamp,
-                    message_text: message.text?.body || '',
-                    message_type: message.type,
-                    received_at: new Date()
-                };
+            //validating if is a message or status change
 
-                await whatsappService.processMessage(formattedMessage);
+            if (change?.value?.statuses?.length > 0) {
+                // only status change
+                const messages_status_change = change.value.statuses.map(status => {
+                    return {
+                        message_id: status.id
+                    }
+                })
 
-                await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
+                messages_status_change.forEach(async message => {
+                    await whatsappService.updateStatus(message.message_id, change.value.statuses[0].status);
+                })
+                await new UserLogService({
+                    user_id: 1,
+                    action: 'update status from messages: ' + JSON.stringify(messages_status_change.map(message => message.message_id).join(', ')) + '.',
+                    origin: path,
+                }).log();
+
+            } else {
+                // only message change
+                for (const message of change.value.messages) {
+                    const formattedMessage: IWhatsappMessage = {
+                        message_id: message.id,
+                        from_number: message.from,
+                        timestamp: message.timestamp,
+                        message_text: message.text?.body || '',
+                        message_type: message.type,
+                        received_at: new Date(),
+                    };
+
+                    await whatsappService.processMessage(formattedMessage);
+
+                    await new UserLogService({
+                        user_id: 1,
+                        action: 'receive message: ' + JSON.stringify(formattedMessage) + '.',
+                        origin: path,
+                    }).log();
+                    
+                    await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
+                }
             }
+
+
         }
 
         return reply.status(200).send('Message received');
