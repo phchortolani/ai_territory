@@ -115,6 +115,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
     server.post(`${path}/schedule/:leader_id`, async (request, reply) => {
         await request.jwtVerify();
         try {
+            console.log('agendando os territórios...')
             const { leader_id } = request.params as any
             if (!leader_id) return reply.status(400).send('Para atualizar a rodada é necessário informar o leader_id no URI')
             const schedule = request.body as ISchedule
@@ -158,7 +159,7 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
             const devolutions = await RoundsService.getReturnSolicitation()
 
             if (devolutions.length == 0) {
-                await new UserLogService({ user_id: 1, action: 'sendReturnInfoMail with success.', origin: 'cron', description: 'Nenhum retorno será necessário.' }).log();
+                await new UserLogService({ user_id: 1, action: 'email not required', origin: 'cron', description: 'Nenhum retorno será necessário.' }).log();
                 return reply.status(200).send("Nenhum retorno será necessário.")
             }
 
