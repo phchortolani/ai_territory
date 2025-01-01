@@ -15,7 +15,7 @@ export interface WhatsAppWebhookBody {
                     };
                     wa_id: string;
                 }>;
-                statuses: [
+                statuses?: [
                     {
                         id: string;
                         status: string,

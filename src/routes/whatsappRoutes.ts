@@ -77,20 +77,23 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                 if ((change?.value?.statuses?.length ?? 0) > 0) {
                     // only status change
                     log_message = 'only status change';
-                    const messages_status_change = change?.value?.statuses.map(status => {
+                    const messages_status_change = change?.value?.statuses?.map(status => {
                         return {
                             message_id: status.id
                         }
                     })
 
-                    log_message = 'updating status from messages: ' + JSON.stringify(messages_status_change.map(message => message.message_id).join(', ')) + '.';
-                    messages_status_change.forEach(async message => {
-                        await whatsappService.updateStatus(message.message_id, change.value.statuses[0].status);
+                    log_message = 'updating status from messages: ' + JSON.stringify(messages_status_change?.map(message => message.message_id).join(', ')) + '.';
+
+                    const current_status = change?.value?.statuses![0]?.status;
+
+                    messages_status_change?.forEach(async message => {
+                        await whatsappService.updateStatus(message.message_id, current_status);
                     })
 
                     await new UserLogService({
                         user_id: 1,
-                        action: 'update status from messages: ' + JSON.stringify(messages_status_change.map(message => message.message_id).join(', ')) + '.',
+                        action: 'update status from messages: ' + JSON.stringify(messages_status_change?.map(message => message.message_id).join(', ')) + '.',
                         origin: path,
                     }).log();
                     log_message = 'status updated';
