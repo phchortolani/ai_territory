@@ -37,74 +37,85 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
     // Endpoint para receber mensagens do WhatsApp
     server.post(`${path}/webhook`, async (request, reply) => {
-        const body = request.body as WhatsAppWebhookBody;
 
-        await new UserLogService({
-            user_id: 1,
-            action: 'receive event from webhook whatsapp.',
-            origin: path,
-        }).log();
+        try {
+            const body = request.body as WhatsAppWebhookBody;
 
-        if (body.object !== 'whatsapp_business_account') {
-            return reply.status(400).send('Invalid object in request');
-        }
+            await new UserLogService({
+                user_id: 1,
+                action: 'receive event from webhook whatsapp.',
+                origin: path,
+            }).log();
 
-        // Validating that 'entry' and 'changes' exist and have messages
-        if (!body.entry || body.entry.length === 0 || !body.entry[0].changes || body.entry[0].changes.length === 0) {
-            return reply.status(400).send('Invalid request format');
-        }
-
-        for (const change of body.entry[0].changes) {
-            if (change.field !== 'messages' || change.value.messaging_product !== 'whatsapp') {
-                return reply.status(400).send('Invalid message format');
-            }
-
-            //validating if is a message or status change
-
-            if (change?.value?.statuses?.length > 0) {
-                // only status change
-                const messages_status_change = change.value.statuses.map(status => {
-                    return {
-                        message_id: status.id
-                    }
-                })
-
-                messages_status_change.forEach(async message => {
-                    await whatsappService.updateStatus(message.message_id, change.value.statuses[0].status);
-                })
+            if (body.object !== 'whatsapp_business_account') {
                 await new UserLogService({
                     user_id: 1,
-                    action: 'update status from messages: ' + JSON.stringify(messages_status_change.map(message => message.message_id).join(', ')) + '.',
+                    action: 'Invalid object in request.',
                     origin: path,
                 }).log();
 
-            } else {
-                // only message change
-                for (const message of change.value.messages) {
-                    const formattedMessage: IWhatsappMessage = {
-                        message_id: message.id,
-                        from_number: message.from,
-                        timestamp: message.timestamp,
-                        message_text: message.text?.body || '',
-                        message_type: message.type,
-                        received_at: new Date(),
-                    };
+                return reply.status(400).send('Invalid object in request');
+            }
 
-                    await whatsappService.processMessage(formattedMessage);
+            // Validating that 'entry' and 'changes' exist and have messages
+            if (!body.entry || body.entry.length === 0 || !body.entry[0].changes || body.entry[0].changes.length === 0) {
+                await new UserLogService({ user_id: 1, action: 'Invalid request format.', origin: path })
+                return reply.status(400).send('Invalid request format');
+            }
 
+            for (const change of body.entry[0].changes) {
+                if (change.field !== 'messages' || change.value.messaging_product !== 'whatsapp') {
+                    await new UserLogService({ user_id: 1, action: 'Invalid message format.', origin: path })
+                    return reply.status(400).send('Invalid message format');
+                }
+
+                //validating if is a message or status change
+
+                if (change?.value?.statuses?.length > 0) {
+                    // only status change
+                    const messages_status_change = change.value.statuses.map(status => {
+                        return {
+                            message_id: status.id
+                        }
+                    })
+
+                    messages_status_change.forEach(async message => {
+                        await whatsappService.updateStatus(message.message_id, change.value.statuses[0].status);
+                    })
                     await new UserLogService({
                         user_id: 1,
-                        action: 'receive message: ' + JSON.stringify(formattedMessage) + '.',
+                        action: 'update status from messages: ' + JSON.stringify(messages_status_change.map(message => message.message_id).join(', ')) + '.',
                         origin: path,
                     }).log();
-                    
-                    await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
+
+                } else {
+                    // only message change
+                    for (const message of change.value.messages) {
+                        const formattedMessage: IWhatsappMessage = {
+                            message_id: message.id,
+                            from_number: message.from,
+                            timestamp: message.timestamp,
+                            message_text: message.text?.body || '',
+                            message_type: message.type,
+                            received_at: new Date(),
+                        };
+
+                        await whatsappService.processMessage(formattedMessage);
+
+                        await new UserLogService({ user_id: 1, action: 'message received with success.', origin: path }).log();
+
+                        await whatsappService.sendMessage(message.from, 'Mensagem recebida com sucesso!');
+                    }
                 }
             }
 
-
+            return reply.status(200).send('Message received');
+        } catch (error: any) {
+            console.error('Erro ao receber mensagem:', error.message);
+            await new UserLogService({ user_id: 1, action: 'Error receiving message.', origin: path, description: error.message }).log();
+            await whatsappService.sendMessage('5511957886697', 'Erro ao receber webhook do whatsapp: ' + error.message);
+            return reply.status(500).send('Internal Server Error');
         }
 
-        return reply.status(200).send('Message received');
     });
 }
