@@ -15,25 +15,25 @@ export interface WhatsAppWebhookBody {
                     };
                     wa_id: string;
                 }>;
-                statuses?: [
+                statuses?: Array<
                     {
-                        id: string;
-                        status: string,
-                        timestamp: string,
-                        recipient_id: string,
-                        conversation: {
-                            id: string,
-                            origin: {
-                                type: string,
+                        id?: string;
+                        status?: string,
+                        timestamp?: string,
+                        recipient_id?: string,
+                        conversation?: {
+                            id?: string,
+                            origin?: {
+                                type?: string,
                             }
                         },
-                        pricing: {
-                            billable: boolean,
-                            pricing_model: string,
-                            category: string
+                        pricing?: {
+                            billable?: boolean,
+                            pricing_model?: string,
+                            category?: string
                         }
                     }
-                ];
+                >;
                 messages: Array<{
                     from: string;
                     id: string;

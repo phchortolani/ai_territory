@@ -88,7 +88,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                     const current_status = change?.value?.statuses![0]?.status;
 
                     messages_status_change?.forEach(async message => {
-                        await whatsappService.updateStatus(message.message_id, current_status);
+                        await whatsappService.updateStatus(message?.message_id ?? '', current_status ?? 'not_set');
                     })
 
                     await new UserLogService({
