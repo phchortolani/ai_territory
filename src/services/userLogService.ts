@@ -7,6 +7,7 @@ export class UserLogService<T = UserLog> extends Database<T> {
 
     constructor(user_log: UserLog) {
         super({ options: { table: 'user_log' } })
+        user_log.date = user_log.date
         this.#user_log = user_log
     }
 
