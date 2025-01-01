@@ -50,11 +50,28 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
         try {
             if (message.timestamp) message.timestamp = new Date(Number(message.timestamp) * 1000).toISOString();
 
-            const result = await sql`insert into ${sql('whatsapp_messages')} ${sql(message)} returning *`;
+            const exists = await this.messageExists(message.message_id);
 
-            return result;
+            if (!exists) {
+                const result = await sql`insert into ${sql('whatsapp_messages')} ${sql(message)} returning *`;
+
+                return result;
+            } else {
+                console.log('Mensagem já existe:', message);
+                return;
+            }
+
         } catch (error) {
             console.error('Erro ao salvar mensagem:', error);
+            throw error;
+        }
+    }
+    async messageExists(message_id: string) {
+        try {
+            const result = await sql`select * from ${sql('whatsapp_messages')} where message_id = ${message_id}`;
+            return result.length > 0;
+        } catch (error) {
+            console.error('Erro ao verificar se a mensagem já existe:', error);
             throw error;
         }
     }
