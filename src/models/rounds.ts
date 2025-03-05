@@ -6,5 +6,6 @@ export interface Rounds {
     leader: number; //fk de leaders
     campaign?: number; //fk de campaign
     status: number; //fk de status_territory 
-    territory_id: number
+    territory_id: number;
+    uid: string;
 }

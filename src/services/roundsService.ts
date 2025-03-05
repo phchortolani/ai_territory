@@ -13,12 +13,15 @@ import { IATerritoriesInfo } from "../models/IA/ia_territories_info";
 import { checkNearTerritories, checkNearTerritoriesV2, checkQuantityIsValid, getNear } from "../utils/getNear";
 import { getDefaultPrompt } from "../utils/getPrompt";
 import { IaExampleHistory } from "../models/IA/ia_example_history";
+import { WhatsappService } from "./whatsappService";
+import { randomUUID } from 'crypto'
 
 interface info_send_grid_devolution {
     name: string,
     leaders: { leader_name: string }[]
 }
 export class RoundsService<T = Rounds> extends Database<T> {
+    serviceWhatsapp: WhatsappService = new WhatsappService()
 
     constructor() {
         super({ options: { table: 'rounds' } })
@@ -170,6 +173,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
     }
 
     async ToSchedule(schedule: ISchedule, leader_id: number) {
+
         try {
             let last_day: Date | null = moment(schedule.first_day).toDate();
 
@@ -256,6 +260,11 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
 
 
+
+            const uuid = randomUUID()
+
+            console.log('uuid', uuid)
+
             const ToScheduleRounds = schedule.territories?.map(territory_id => {
                 const obj = {
                     territory_id,
@@ -263,7 +272,8 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     leader: leader_id,
                     expected_return,
                     last_day,
-                    status: 2
+                    status: 2,
+                    uid: uuid
                 } as Rounds
                 if (schedule.campaign_id) {
                     obj.campaign = schedule.campaign_id
@@ -291,13 +301,34 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     formattedData += `Saída: *${first_day}* ${last_day != first_day ? `| 2ª Saída: *${last_day}*` : ''}\n`;
                     formattedData += `Territórios: *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n`;
 
+                    let info_whatsapp = '';
 
                     if (territories_infos.length > 0) {
                         territories_infos.filter(x => schedule.territories?.includes(x.id)).sort((a, b) => a.id - b.id).forEach(info => {
-                            formattedData += `T.${info.id} - Última vez trabalhado: *${moment(info.last_schedule).utc().format('DD-MM-YYYY')}*\n`;
+                            formattedData += `Ter.${info.id} - Última vez trabalhado: *${moment(info.last_schedule).utc().format('DD-MM-YYYY')}*\n`;
+                            info_whatsapp += `🛄🗓️ • T.${info.id} - Última vez trabalhado: *${moment(info.last_schedule).utc().format('DD-MM-YYYY')}* `;
                         })
                     }
                     formattedData += `Quantidade de casas: *${quantity_house}*\n`;
+
+                    const ret = await this.serviceWhatsapp.sendMessageRoundInfo('+5511957886697', {
+                        dia: schedule.first_day,
+                        info: info_whatsapp,
+                        territorios: schedule.territories.join(', '),
+                        quantidade_casas: quantity_house,
+                        url: uuid
+                    })
+
+                    if (ret && ret['messages'][0] && ret['messages'][0]['id']?.length > 0) {
+                        console.log('Mensagem enviada com sucesso! ✅🎉')
+                        console.log('enviando imagens...')
+                        await new Promise(resolve => setTimeout(resolve, 10000)); // 10 segundos
+                        await this.serviceWhatsapp.sendMultipleImages('+5511957886697', schedule.territories.map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
+                        console.log('Imagens enviadas com sucesso! ✅🎉')
+                        return formattedData
+                    }
+
+
                     return formattedData
                 }
                 console.log('Nenhuma rodada criada! 🙈❌')
@@ -378,6 +409,10 @@ export class RoundsService<T = Rounds> extends Database<T> {
         } catch (err) {
             throw err
         }
+    }
+
+    async getRoundByUUID(uuid: string): Promise<Rounds[]> {
+        return await sql`select * from rounds where uid = ${uuid}`
     }
 
 }
