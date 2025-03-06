@@ -15,11 +15,22 @@ import { getDefaultPrompt } from "../utils/getPrompt";
 import { IaExampleHistory } from "../models/IA/ia_example_history";
 import { WhatsappService } from "./whatsappService";
 import { randomUUID } from 'crypto'
+import { Leaders } from "../models/leaders";
 
 interface info_send_grid_devolution {
     name: string,
     leaders: { leader_name: string }[]
 }
+
+interface vw_house_not_allowed {
+    id: number,
+    territory_id: number,
+    house_number?: number,
+    description: string,
+    obs?: string
+}
+
+export const telefone_ph = '+5511957886697'
 export class RoundsService<T = Rounds> extends Database<T> {
     serviceWhatsapp: WhatsappService = new WhatsappService()
 
@@ -294,42 +305,77 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
                     const day = moment(schedule.first_day).utc().format('dddd').toLowerCase().charAt(0).toUpperCase() + moment(schedule.first_day).utc().format('dddd').slice(1);
 
-                    let formattedData = `*${day}*\n`
-                    const first_day = moment(RoundsCreated[0].first_day).utc().format('DD-MM-YYYY')
-                    const last_day = moment(RoundsCreated[0].last_day).utc().format('DD-MM-YYYY')
+                    let formattedData = `*${day}*\n`;
+                    const first_day = moment(RoundsCreated[0].first_day).utc().format('DD-MM-YYYY');
+                    const last_day = moment(RoundsCreated[0].last_day).utc().format('DD-MM-YYYY');
 
-                    formattedData += `Saída: *${first_day}* ${last_day != first_day ? `| 2ª Saída: *${last_day}*` : ''}\n`;
-                    formattedData += `Territórios: *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n`;
+                    formattedData += `Saída: *${first_day}* ${last_day != first_day ? `| 2ª Saída: *${last_day}*` : ''}\n\n`;
+                    formattedData += `*Territórios:* \n 🗺️ *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n\n`;
 
-                    let info_whatsapp = '';
+                    formattedData += `*Informações adicionais:*\n`;
 
                     if (territories_infos.length > 0) {
                         territories_infos.filter(x => schedule.territories?.includes(x.id)).sort((a, b) => a.id - b.id).forEach(info => {
-                            formattedData += `Ter.${info.id} - Última vez trabalhado: *${moment(info.last_schedule).utc().format('DD-MM-YYYY')}*\n`;
-                            info_whatsapp += `🛄🗓️ • T.${info.id} - Última vez trabalhado: *${moment(info.last_schedule).utc().format('DD-MM-YYYY')}* `;
-                        })
+                            formattedData += `🗓️ • T.${info.id} - Última vez trabalhado: *${moment(info.last_schedule).utc().format('DD-MM-YYYY')}*\n`;
+                        });
                     }
-                    formattedData += `Quantidade de casas: *${quantity_house}*\n`;
 
-                    const sended_start_info = await this.serviceWhatsapp.sendRoundInfoStartMessage('+5511957886697', "irmão")
+                    formattedData += `\n*Quantidade de casas:*\n 🏘️ *${quantity_house}*\n`;
+
+                    const houses_not_allowed = await this.getInfoHouseNotAllowed(schedule.territories);
+                    if (houses_not_allowed.length > 0) {
+                        formattedData += `\n⚠️ *Atenção* ⚠️\n`;
+                        formattedData += `_Os seguintes casas não podem ser trabalhadas:_ \n\n`;
+
+                        // Agrupar casas por território
+                        const groupedHouses = houses_not_allowed.reduce((acc: any, x) => {
+                            if (!acc[x.territory_id]) acc[x.territory_id] = [];
+                            acc[x.territory_id].push(x);
+                            return acc;
+                        }, {});
+
+                        // Iterar sobre cada território e suas casas
+                        Object.keys(groupedHouses).forEach(territoryId => {
+                            const territoryHouses = groupedHouses[territoryId] as vw_house_not_allowed[];
+                            formattedData += `*T.${territoryId} - ${territoryHouses[0].description || ''}:*\n\n`; // Usando o nome do território se disponível
+                            territoryHouses.forEach(house => {
+                                formattedData += `🚫 _Nº ${house.house_number ?? 'S/N'}${house.obs ? ` - *${house.obs}*` : ''}_ \n`;
+                            });
+                            formattedData += '\n';
+                        });
+                    }
+
+                    const leader_info: Leaders[] = await sql`select * from leaders where id = ${leader_id} limit 1`;
+                    let leader_selected = leader_info[0]
+
+                    if (!leader_selected) throw new Error('Leader selecionado nao encontrado')
+                    if (!leader_selected.telefone) leader_selected.telefone = telefone_ph;
+
+                    const sended_start_info = await this.serviceWhatsapp.sendRoundInfoStartMessage(leader_selected?.telefone, leader_selected?.name)
 
                     if (sended_start_info) {
                         console.log('Mensagem de início enviada para o irmão... 📲📩')
                         console.log('Enviando imagens...')
                         await new Promise(resolve => setTimeout(resolve, 1000));
-                        const send_images = await this.serviceWhatsapp.sendMultipleImages('+5511957886697', schedule.territories.map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
+                        const send_images = await this.serviceWhatsapp.sendMultipleImages(leader_selected?.telefone, schedule.territories.map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
 
                         if (send_images) {
                             console.log('Imagens enviadas com sucesso! 📲📩')
                             console.log('Enviando dados com o agendamento... 📲📩')
-                            const send_schedule = await this.serviceWhatsapp.sendMessageRoundInfo('+5511957886697', {
-                                dia: schedule.first_day,
-                                info: info_whatsapp,
-                                territorios: schedule.territories.join(', '),
-                                quantidade_casas: quantity_house,
-                                url: uuid
-                            })
-                            if (send_schedule) console.log('Dados enviados com sucesso! 📲📩')
+
+                            const send_schedule = await this.serviceWhatsapp.sendMessage(leader_selected?.telefone, formattedData)
+
+                            if (send_schedule) {
+                                console.log('Dados enviados com sucesso! 📲📩')
+                                if (leader_selected.telefone != telefone_ph) {
+                                    formattedData += `\n\n*Os dados acima foram enviados para o irmão(ã): ${leader_selected.name} no telefone *${leader_selected.telefone}*`
+                                    formattedData += `\n\n*O status de envio das imagens é de "*${send_images ? 'Sucesso' : 'Erro'}"*.\n\n*O status de envio dos dados de agendamento é de "*${send_schedule ? 'Sucesso' : 'Erro'}*"*\n`
+                                    const send_status = await this.serviceWhatsapp.sendMessage(telefone_ph, formattedData)
+                                    if (send_status) {
+                                        console.log('Dados de confirmação enviados com sucesso! 📲📩')
+                                    } else console.log('Erro ao enviar dados para o telefone de backup! 📲📩')
+                                }
+                            }
                             else console.log('Erro ao enviar dados! 📲📩')
 
                         }
@@ -395,7 +441,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
                         devolution_list.push({
                             leader: {
                                 id: devolution.leader_id,
-                                name: devolution.leader_name
+                                name: devolution.leader_name,
                             },
                             devolutions: [{
                                 first_day: devolution.first_day,
@@ -420,6 +466,13 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
     async getRoundByUUID(uuid: string): Promise<Rounds[]> {
         return await sql`select * from rounds where uid = ${uuid}`
+    }
+
+    async getInfoHouseNotAllowed(territories_id: number[]): Promise<vw_house_not_allowed[]> {
+        const territories: vw_house_not_allowed[] = await sql`select * from vw_house_not_allowed where territory_id in ${sql(territories_id)}`
+        if (territories.length == 0) return []
+
+        return territories
     }
 
 }

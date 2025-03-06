@@ -49,7 +49,7 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
                     'Content-Type': 'application/json',
                 }
             });
-            return response.data;
+            return response.status == 200;
         } catch (error: any) {
             console.error('Erro ao enviar mensagem:', error.response?.data || error.message);
             throw error;
@@ -173,7 +173,7 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
                     });
 
                     // Adiciona um pequeno delay entre os envios para evitar rate limiting
-                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    await new Promise(resolve => setTimeout(resolve, 500));
                 } catch (error: any) {
                     console.error(`Erro ao enviar imagem ${image.url}:`, error.response?.data || error.message);
                     results.push({
@@ -237,7 +237,7 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
 
     async sendRoundInfoStartMessage(to: string, nome: string) {
         try {
-            console.log('Enviando template utilitário para:', to);
+            console.log('Enviando template utilitário para:', nome);
 
             const url = `${this.metaUrl}${this.phoneNumberId}/messages`;
 
@@ -271,7 +271,7 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
                 }
             });
 
-            console.log('Resposta da API:', response.data);
+            // console.log('Resposta da API:', response.data);
             return response.status == 200;
         } catch (error: any) {
             console.error('Erro ao enviar template utilitário:', error.response?.data || error.message);
