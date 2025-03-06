@@ -311,23 +311,30 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     }
                     formattedData += `Quantidade de casas: *${quantity_house}*\n`;
 
-                    const ret = await this.serviceWhatsapp.sendMessageRoundInfo('+5511957886697', {
-                        dia: schedule.first_day,
-                        info: info_whatsapp,
-                        territorios: schedule.territories.join(', '),
-                        quantidade_casas: quantity_house,
-                        url: uuid
-                    })
+                    const sended_start_info = await this.serviceWhatsapp.sendRoundInfoStartMessage('+5511957886697', "irmão")
 
-                    if (ret && ret['messages'][0] && ret['messages'][0]['id']?.length > 0) {
-                        console.log('Mensagem enviada com sucesso! ✅🎉')
-                        console.log('enviando imagens...')
-                        await new Promise(resolve => setTimeout(resolve, 10000)); // 10 segundos
-                        await this.serviceWhatsapp.sendMultipleImages('+5511957886697', schedule.territories.map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
-                        console.log('Imagens enviadas com sucesso! ✅🎉')
-                        return formattedData
+                    if (sended_start_info) {
+                        console.log('Mensagem de início enviada para o irmão... 📲📩')
+                        console.log('Enviando imagens...')
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        const send_images = await this.serviceWhatsapp.sendMultipleImages('+5511957886697', schedule.territories.map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
+
+                        if (send_images) {
+                            console.log('Imagens enviadas com sucesso! 📲📩')
+                            console.log('Enviando dados com o agendamento... 📲📩')
+                            const send_schedule = await this.serviceWhatsapp.sendMessageRoundInfo('+5511957886697', {
+                                dia: schedule.first_day,
+                                info: info_whatsapp,
+                                territorios: schedule.territories.join(', '),
+                                quantidade_casas: quantity_house,
+                                url: uuid
+                            })
+                            if (send_schedule) console.log('Dados enviados com sucesso! 📲📩')
+                            else console.log('Erro ao enviar dados! 📲📩')
+
+                        }
+
                     }
-
 
                     return formattedData
                 }

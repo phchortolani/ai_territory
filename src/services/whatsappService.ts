@@ -5,6 +5,7 @@ import { IWhatsappMessage } from "../models/Whatsapp/whatsapp_message";
 import { WhatsappChallenge } from "../models/WhatsappChallenge";
 import { UserLogService } from "./userLogService";
 import moment from "moment";
+import { getStatusDay } from "../utils/getStatusDay";
 
 export interface RoundInfoTemplateParams {
     territorios: string;
@@ -115,7 +116,7 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
                 }
             };
 
-            console.log('Body:', JSON.stringify(body, null, 2));
+            // console.log('Body:', JSON.stringify(body, null, 2));
 
             const response = await axios.post(url, body, {
                 headers: {
@@ -125,7 +126,7 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
             });
 
             console.log('Resposta:', response.data);
-            return response.data;
+            return response.status == 200;
         } catch (error: any) {
             console.error('Erro ao enviar mensagem:', error.response?.data || error.message);
             throw error;
@@ -183,7 +184,7 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
                 }
             }
 
-            return results;
+            return results.every(result => result.success);
         } catch (error: any) {
             console.error('Erro ao enviar múltiplas imagens:', error);
             throw error;
@@ -234,4 +235,50 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
         }
     }
 
+    async sendRoundInfoStartMessage(to: string, nome: string) {
+        try {
+            console.log('Enviando template utilitário para:', to);
+
+            const url = `${this.metaUrl}${this.phoneNumberId}/messages`;
+
+            const status_dia = getStatusDay();
+
+            const body = {
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: to,
+                type: "template",
+                template: {
+                    name: "round_start",
+                    language: { code: "pt_BR" },
+                    components: [
+                        {
+                            type: "body",
+                            parameters: [
+                                { type: "text", parameter_name: "status_dia", text: status_dia }
+                            ]
+                        }
+                    ]
+                }
+            };
+
+            // console.log('Body:', JSON.stringify(body, null, 2));
+
+            const response = await axios.post(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${this.accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            console.log('Resposta da API:', response.data);
+            return response.status == 200;
+        } catch (error: any) {
+            console.error('Erro ao enviar template utilitário:', error.response?.data || error.message);
+            throw error;
+        }
+    }
+
+
 }
+
