@@ -172,12 +172,13 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         - Se não encontrar o dia, responda: **"SEM DIA"**  
                                         - Se não encontrar o dirigente (nem pelo nome, nem pelo telefone), responda: **"SEM DIRIGENTE"**  
                                         - Se não encontrar nem o dirigente nem o dia, responda: **"SEM DIA E DIRIGENTE"**  
-                                        - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"** 
-                                        - Se encontrar o dirigente e a data, mas o dirigente só foi encontrado pelo telefone, responda: **"ENCONTRADO_POR_TELEFONE,id,YYYY-MM-DD"** 
+                                        - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"**  
+                                        - Se o dirigente **foi identificado apenas pelo telefone**, responda: **"ENCONTRADO_POR_TELEFONE,id,YYYY-MM-DD"**  
                                       
                                         🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**  
                                         `
-                                    });
+                                      });
+                                      
 
                                     if (agendamento_texto.startsWith('SEM DIA E DIRIGENTE')) {
                                         await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dirigente e o dia que deseja agendar.');
