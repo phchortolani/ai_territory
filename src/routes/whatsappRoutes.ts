@@ -121,18 +121,19 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                             await whatsappService.processMessage(formattedMessage);
                             log_message = 'message processed with success.';
 
-                            const retorno = await getAI({
-                                prompt: `Analise o seguinte texto: ${formattedMessage.message_text}. 
+                            if (!!formattedMessage?.message_text) {
+                                const retorno = await getAI({
+                                    prompt: `Analise o seguinte texto: ${formattedMessage.message_text}. 
                                 Com base no texto acima, responda SOMENTE com SIM ou NÃO: O texto se trata de uma solicitação de agendamento de território?
                                 Exemplo de resposta: SIM
                                 `
-                            });
+                                });
 
-                            const dirigentes = await leadersService.list();
-                            if (retorno.toLocaleUpperCase() == 'SIM') {
+                                const dirigentes = await leadersService.list();
+                                if (retorno.toLocaleUpperCase() == 'SIM') {
 
-                                const agendamento_texto = await getAI({
-                                    prompt: `Com base no seguinte texto: "${formattedMessage.message_text}", identifique:  
+                                    const agendamento_texto = await getAI({
+                                        prompt: `Com base no seguinte texto: "${formattedMessage.message_text}", identifique:  
                                   
                                     1. O nome do dirigente mencionado.  
                                     2. O dia desejado para o agendamento.  
@@ -151,44 +152,41 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                   
                                     🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**  
                                     `
-                                });
+                                    });
 
-                                if (agendamento_texto.startsWith('SEM DIA')) {
-                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dia que deseja agendar.');
-                                }
-                                if (agendamento_texto.startsWith('SEM DIRIGENTE')) {
-                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dirigente que deseja agendar.');
-                                }
-                                if (agendamento_texto.startsWith('SEM DIA E DIRIGENTE')) {
-                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dirigente e o dia que deseja agendar.');
-                                }
-                                if (agendamento_texto.startsWith('DATA ANTERIOR A HOJE')) {
-                                    await whatsappService.sendMessage(formattedMessage.from_number, 'A data informada é anterior a hoje. Por favor, informe uma data válida.');
-                                }
-                                if (agendamento_texto.startsWith('ENCONTRADO')) {
-                                    const agendamento = agendamento_texto.split(',');
-                                    const dirigente_id = Number(agendamento[1]);
-                                    const dia = agendamento[2];
-                                    const dirigente = dirigentes?.find(dirigente => dirigente.id == dirigente_id);
-                                    if (dirigente) {
-                                        const agendamento = {
-                                            territories: [],
-                                            first_day: moment(dia).toDate(),
-                                            repeat_next_week: false,
-                                            not_use_ia: false
-                                        }
-                                        await roundsService.ToSchedule(agendamento, dirigente_id);
-                                    } else {
-                                        await whatsappService.sendMessage(formattedMessage.from_number, 'Não encontrei o dirigente informado. Por favor, tente novamente.');
+                                    if (agendamento_texto.startsWith('SEM DIA')) {
+                                        await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dia que deseja agendar.');
                                     }
+                                    if (agendamento_texto.startsWith('SEM DIRIGENTE')) {
+                                        await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dirigente que deseja agendar.');
+                                    }
+                                    if (agendamento_texto.startsWith('SEM DIA E DIRIGENTE')) {
+                                        await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dirigente e o dia que deseja agendar.');
+                                    }
+                                    if (agendamento_texto.startsWith('DATA ANTERIOR A HOJE')) {
+                                        await whatsappService.sendMessage(formattedMessage.from_number, 'A data informada é anterior a hoje. Por favor, informe uma data válida.');
+                                    }
+                                    if (agendamento_texto.startsWith('ENCONTRADO')) {
+                                        const agendamento = agendamento_texto.split(',');
+                                        const dirigente_id = Number(agendamento[1]);
+                                        const dia = agendamento[2];
+                                        const dirigente = dirigentes?.find(dirigente => dirigente.id == dirigente_id);
+                                        if (dirigente) {
+                                            const agendamento = {
+                                                territories: [],
+                                                first_day: moment(dia).toDate(),
+                                                repeat_next_week: false,
+                                                not_use_ia: false
+                                            }
+                                            await roundsService.ToSchedule(agendamento, dirigente_id);
+                                        } else {
+                                            await whatsappService.sendMessage(formattedMessage.from_number, 'Não encontrei o dirigente informado. Por favor, tente novamente.');
+                                        }
+                                    }
+                                } else {
+                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Não entendi a solicitação. Por favor, tente novamente.');
                                 }
-                            } else {
-                                await whatsappService.sendMessage(formattedMessage.from_number, 'Não entendi a solicitação. Por favor, tente novamente.');
                             }
-
-
-
-
                         }
                     }
 
