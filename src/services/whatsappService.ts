@@ -201,7 +201,7 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
             if (!exists) {
                 const result: IWhatsappMessage[] = await sql`insert into ${sql('whatsapp_messages')} ${sql(message)} returning *`;
 
-                this.sendMessage(message.from_number, 'Mensagem recebida e registrada com sucesso!');
+                //  this.sendMessage(message.from_number, 'Mensagem recebida e registrada com sucesso!');
                 await new UserLogService({ user_id: 1, action: 'message  received with success.', origin: 'whatsapp', description: result[0]?.message_id }).log();
 
                 return result;
