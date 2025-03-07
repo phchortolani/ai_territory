@@ -396,7 +396,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
                         if (send_images) {
                             console.log('Imagens enviadas com sucesso! 📲📩')
                             console.log('Enviando dados com o agendamento... 📲📩')
-
+                            await new Promise(resolve => setTimeout(resolve, 1000));
                             const send_schedule = await this.serviceWhatsapp.sendMessage(telefone_ph, formattedData)
 
                             if (send_schedule) {
