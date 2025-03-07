@@ -344,7 +344,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     const last_day = moment(RoundsCreated[0].last_day).utc().format('DD-MM-YYYY');
 
                     formattedData += `Saída: *${first_day}* ${last_day != first_day ? `| 2ª Saída: *${last_day}*` : ''}\n\n`;
-                    formattedData += `*Dirigente:* \n 🧑🏻‍💼 *${leader_selected.name}*\n\n\n`;
+                    formattedData += `*Dirigente:* \n 🧑🏻‍💼 *${leader_selected.name}*\n\n`;
                     formattedData += `*Territórios:* \n 🗺️ *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n\n`;
 
                     formattedData += `*Informações adicionais:*\n`;
