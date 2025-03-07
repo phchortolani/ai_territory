@@ -133,6 +133,9 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     - "Gere territórios para o fulano de tal no dia tal"
                                     - "Quero agendar um território para o fulano de tal no dia tal"
                                     - "Gere territórios para o fulano de tal"  
+                                    - 'Quero territórios para hoje'
+                                    - 'Preciso de territórios'
+                                    - 'Me envie os territórios'
                                   
                                     🔹 **Responda apenas com "SIM" ou "NÃO".** Nenhuma outra resposta é permitida.  
                                   
