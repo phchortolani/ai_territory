@@ -163,7 +163,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         3. Se o nome do dirigente **não for mencionado**, verifique na lista de dirigentes se o telefone **${formattedMessage.from_number}** está cadastrado e associe-o ao dirigente correspondente.  
                                       
                                         **Lista de dirigentes cadastrados (id - nome - telefone):**  
-                                        ${dirigentes?.map(dirigente => `${dirigente.id} - ${dirigente.name} - ${dirigente?.telefone}`).join(', ')}  
+                                        ${dirigentes?.map(dirigente => `ID: ${dirigente.id} - NOME: ${dirigente.name} - TELEFONE: ${dirigente?.telefone}`).join(', ')}  
                                       
                                         **Data atual:** ${moment().subtract(3, 'hours').format('YYYY-MM-DD')}.  
                                       
