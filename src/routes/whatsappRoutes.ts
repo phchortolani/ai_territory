@@ -147,25 +147,27 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
                                     const agendamento_texto = await getAI({
                                         prompt: `Com base no seguinte texto: "${formattedMessage.message_text}", identifique:  
-                                  
-                                    1. O nome do dirigente mencionado.  
-                                    2. O dia desejado para o agendamento.  
-                                  
-                                    Lista de dirigentes cadastrados (id - nome):  
-                                    ${dirigentes?.map(dirigente => `${dirigente.id} - ${dirigente.name}`).join(', ')}  
-                                  
-                                    Hoje é ${moment().subtract(3, 'hours').format('YYYY-MM-DD')}.  
-                                  
-                                    **Regras de resposta:**  
-                                    - Se encontrar o dirigente e o dia, responda: **"ENCONTRADO,id,YYYY-MM-DD"**  
-                                    - Se não encontrar o dia, responda: **"SEM DIA"**  
-                                    - Se não encontrar o dirigente, responda: **"SEM DIRIGENTE"**  
-                                    - Se não encontrar nem o dirigente nem o dia, responda: **"SEM DIA E DIRIGENTE"**  
-                                    - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"**  
-                                  
-                                    🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**  
-                                    `
+                                      
+                                        1. O nome do dirigente mencionado.  
+                                        2. O dia desejado para o agendamento.  
+                                        3. Se o nome do dirigente **não for mencionado**, verifique na lista de dirigentes se o telefone **${formattedMessage.from_number}** está cadastrado e associe-o ao dirigente correspondente.  
+                                      
+                                        **Lista de dirigentes cadastrados (id - nome - telefone):**  
+                                        ${dirigentes?.map(dirigente => `${dirigente.id} - ${dirigente.name} - ${dirigente?.telefone}`).join(', ')}  
+                                      
+                                        **Data atual:** ${moment().subtract(3, 'hours').format('YYYY-MM-DD')}.  
+                                      
+                                        **Regras de resposta:**  
+                                        - Se encontrar o dirigente e o dia, responda: **"ENCONTRADO,id,YYYY-MM-DD"**  
+                                        - Se não encontrar o dia, responda: **"SEM DIA"**  
+                                        - Se não encontrar o dirigente (nem pelo nome, nem pelo telefone), responda: **"SEM DIRIGENTE"**  
+                                        - Se não encontrar nem o dirigente nem o dia, responda: **"SEM DIA E DIRIGENTE"**  
+                                        - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"**  
+                                      
+                                        🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**  
+                                        `
                                     });
+
 
                                     if (agendamento_texto.startsWith('SEM DIA')) {
                                         await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dia que deseja agendar.');
