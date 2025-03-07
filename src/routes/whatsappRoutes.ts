@@ -143,7 +143,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                 });
 
                                 const dirigentes = await leadersService.list();
-                                if (retorno.toLocaleUpperCase().endsWith('SIM')) {
+                                if (retorno.toUpperCase().trim() === 'SIM') {
 
                                     const agendamento_texto = await getAI({
                                         prompt: `Com base no seguinte texto: "${formattedMessage.message_text}", identifique:  
