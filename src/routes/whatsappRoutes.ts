@@ -5,7 +5,7 @@ import moment from 'moment';
 import { IWhatsappMessage } from '../models/Whatsapp/whatsapp_message';
 import { WhatsAppWebhookBody } from '../models/Whatsapp/whatsappMessageBody';
 import { UserLogService } from '../services/userLogService';
-import { log } from 'console';
+import 'moment/locale/pt-br';
 import { getAI } from '../services/geminiService';
 import { LeadersService } from '../services/leadersService';
 import { RoundsService } from '../services/roundsService';
@@ -154,7 +154,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     Lista de dirigentes cadastrados (id - nome):  
                                     ${dirigentes?.map(dirigente => `${dirigente.id} - ${dirigente.name}`).join(', ')}  
                                   
-                                    Hoje é ${moment().format('YYYY-MM-DD')}.  
+                                    Hoje é ${moment().utc().format('YYYY-MM-DD')}.  
                                   
                                     **Regras de resposta:**  
                                     - Se encontrar o dirigente e o dia, responda: **"ENCONTRADO,id,YYYY-MM-DD"**  

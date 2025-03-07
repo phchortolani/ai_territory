@@ -336,11 +336,15 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
                     const day = moment(schedule.first_day).utc().format('dddd').toLowerCase().charAt(0).toUpperCase() + moment(schedule.first_day).utc().format('dddd').slice(1);
 
+                    const leader_info: Leaders[] = await sql`select * from leaders where id = ${leader_id} limit 1`;
+                    let leader_selected = leader_info[0]
+
                     let formattedData = `*${day}*\n`;
                     const first_day = moment(RoundsCreated[0].first_day).utc().format('DD-MM-YYYY');
                     const last_day = moment(RoundsCreated[0].last_day).utc().format('DD-MM-YYYY');
 
                     formattedData += `Saída: *${first_day}* ${last_day != first_day ? `| 2ª Saída: *${last_day}*` : ''}\n\n`;
+                    formattedData += `*Dirigente:* \n 🧑🏻‍💼 *${leader_selected.name}*\n\n\n`;
                     formattedData += `*Territórios:* \n 🗺️ *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n\n`;
 
                     formattedData += `*Informações adicionais:*\n`;
@@ -376,8 +380,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
                         });
                     }
 
-                    const leader_info: Leaders[] = await sql`select * from leaders where id = ${leader_id} limit 1`;
-                    let leader_selected = leader_info[0]
+
 
                     if (!leader_selected) throw new Error('Leader selecionado nao encontrado')
                     leader_selected.telefone = telefone_ph;
