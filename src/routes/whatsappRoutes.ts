@@ -136,6 +136,12 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     - 'Quero territórios para hoje'
                                     - 'Preciso de territórios'
                                     - 'Me envie os territórios'
+                                    - 'Quero os territórios'
+                                    - 'Gere territórios'
+                                    - 'gere territórios para mim'
+                                    - 'me mande os territórios'
+
+                                    Qualquer solicitação parecida com esses exemplos é considerada uma solicitação de agendamento.
                                   
                                     🔹 **Responda apenas com "SIM" ou "NÃO".** Nenhuma outra resposta é permitida.  
                                   
@@ -202,7 +208,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         }
                                     }
                                 } else {
-                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Não entendi a solicitação por esse texto. Por favor, tente novamente: ' + retorno);
+                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Não entendi a solicitação por esse texto. Por favor, tente novamente:');
                                 }
                             }
                         }
