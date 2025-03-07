@@ -154,7 +154,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     Lista de dirigentes cadastrados (id - nome):  
                                     ${dirigentes?.map(dirigente => `${dirigente.id} - ${dirigente.name}`).join(', ')}  
                                   
-                                    Hoje é ${new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })}.  
+                                    Hoje é ${moment().subtract(3, 'hours').format('YYYY-MM-DD')}.  
                                   
                                     **Regras de resposta:**  
                                     - Se encontrar o dirigente e o dia, responda: **"ENCONTRADO,id,YYYY-MM-DD"**  
