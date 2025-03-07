@@ -158,12 +158,12 @@ export class RoundsService<T = Rounds> extends Database<T> {
           }
    */
 
-        const available_territories = await this.getRoundsByRangeofDate(15)
+        const territorios_disponiveis = await this.getRoundsByRangeofDate(15)
 
 
         if (!schedule.territories) return null;
 
-        console.log(available_territories)
+        console.log(territorios_disponiveis)
 
         // pegar a partir de 15 dias
 
@@ -211,63 +211,94 @@ export class RoundsService<T = Rounds> extends Database<T> {
                 throw new Error('O agendamento não pode ser concluído visto que esses territórios já possuem agendamento nessa mesma data. Territórios: ' + DataInRange.join(','));
             }
 
-            let iaTerritoriesInfo: IATerritoriesInfo[] = []
 
             if (!schedule.not_use_ia) {
-                const available_territories: ia_info_territory[] = await sql`	select t.id,vlj.last_schedule,t.house_numbers from vw_last_job vlj 
-                join territories t on vlj.territory_id = t.id where (current_date - vlj.last_schedule) >= 10 order by vlj.last_schedule`
-                // aqui a IA entra em ação
+                console.log('Gerando agendamento com algoritmo...')
+                let territorios_disponiveis: IATerritoriesInfo[] = []
+                let gerado = false;
+                let days = 30;
+                let array_gerado: number[] = []
+                let forCache: IATerritoriesInfo[] = []
+                let tentativas = 0;
+                const maxTentativas = 1000; // Defina um limite de tentativas para evitar loops infinitos
 
-                iaTerritoriesInfo = available_territories.map(territory => {
-                    return { id: territory.id, house_numbers: territory.house_numbers, nears: getNear(territory.id), last_schedule: territory.last_schedule }
-                })
+                while (!gerado && days >= 0 && tentativas < maxTentativas) {
+                    console.log('🔍 Consultando com ' + days + ' dias');
+                    const { territorios_disponiveis, forCache: cache } = await this.getAvaliableTerritories(days, forCache);
+                    forCache = cache;
 
-                schedule.territories = undefined;
-                let interacoes = 0;
+                    if (territorios_disponiveis.length === 0) {
+                        console.warn('⚠️ Nenhum território disponível. Reduzindo dias e tentando novamente...');
+                        days--;
 
-
-                const ia_example_history: IaExampleHistory[] = await sql`SELECT
-                to_char(r.first_day, 'YYYY-MM-DD') AS first_day,
-                string_agg(r.territory_id::text, ',') AS territories_id
-            FROM
-                rounds r
-            WHERE
-                extract(dow from r.first_day) <> 0 -- Exclui os dias que são domingo
-            GROUP BY
-                r.first_day
-            ORDER BY
-                first_day DESC`
-
-                let perfect_prompt = getDefaultPrompt({ infos: iaTerritoriesInfo, ia_example_history })
-
-                while (!schedule.territories) {
-                    interacoes++;
-                    console.log('Tentativa Nº ', interacoes)
-
-                    const territories_generated = await getAI({ prompt: perfect_prompt })
-                    //continua o fluxo
-                    const territories_array = eval(territories_generated) as Array<number>
-
-                    const checkNear = checkNearTerritoriesV2(territories_array)
-                    if (checkNear.result) {
-                        const checkQT = checkQuantityIsValid(territories_array, iaTerritoriesInfo, 120, 200)
-                        if (checkQT.result) {
-                            schedule.territories = territories_array.sort((a, b) => a - b)
+                        if (days < 0) {
+                            console.error('🚨 Nenhum território disponível mesmo com 0 dias. Encerrando para evitar loop infinito.');
                             break;
-                        } else {
-                            console.log(checkQT.msg)
-                            perfect_prompt = `Foi solicitado esse prompt: ${perfect_prompt} porém ${checkQT.msg}. gere novamente por favor respeitando todas as regras já explicadas.`
                         }
-                    } else {
-                        console.log(checkNear.msg)
-                        perfect_prompt = `Foi solicitado esse prompt: ${perfect_prompt} porém ${checkNear.msg}. gere novamente por favor respeitando todas as regras já explicadas.`
+                        tentativas++;
+                        continue; // Reinicia o loop sem executar o restante do código
                     }
-                    if (interacoes == 40) break;
+
+                    console.log('Territórios disponíveis: ' + territorios_disponiveis.map(x => x.id).join(','));
+
+                    console.log('Verificando proximidade dos territórios...');
+                    for (const territorio_atual of territorios_disponiveis) {
+                        territorio_atual.nears = getNear(territorio_atual.id);
+                        console.log('Verificando território: ' + territorio_atual.id);
+
+                        const territorios_proximos_disponiveis = territorio_atual.nears.filter(x =>
+                            territorios_disponiveis.map(y => y.id).includes(x)
+                        );
+
+                        let grupo_de_territorios_para_verificacao = territorios_disponiveis.filter(x =>
+                            territorios_proximos_disponiveis.includes(x.id)
+                        );
+
+                        console.log('Territórios próximos disponíveis: ' + grupo_de_territorios_para_verificacao.map(x => x.id).join(','));
+
+                        grupo_de_territorios_para_verificacao = [territorio_atual].concat(grupo_de_territorios_para_verificacao);
+
+                        console.log('Territórios próximos disponíveis com o território atual: ' + grupo_de_territorios_para_verificacao.map(x => x.id).join(','));
+
+                        const quantidade_casas_do_grupo = grupo_de_territorios_para_verificacao.reduce((acc, cur) => acc + (cur?.house_numbers ?? 0), 0);
+
+                        console.log('Quantidade de casas do grupo: ' + quantidade_casas_do_grupo);
+
+                        if (quantidade_casas_do_grupo < 120) {
+                            console.log(`⚠️ Grupo de territórios do território ${territorio_atual?.id} não atingiu a quantidade mínima de 120 casas.`);
+                            tentativas++;
+                        } else {
+                            gerado = true;
+                            console.log(`✅ Grupo de territórios do território ${territorio_atual?.id} atingiu a quantidade mínima de 120 casas. Gerando agendamento...`);
+
+                            let contador_casas_grupo = 0;
+
+                            grupo_de_territorios_para_verificacao.forEach(territorio => {
+                                if (contador_casas_grupo >= 120) return;
+                                console.log('Adicionando território: ' + territorio.id);
+                                contador_casas_grupo += territorio?.house_numbers ?? 0;
+                                array_gerado.push(territorio.id);
+                            });
+
+                            console.log(`🎉 Agendamento gerado com ${days} dias com sucesso!`);
+                            break; // Sai do loop assim que um agendamento válido for encontrado
+                        }
+                    }
+                    if (array_gerado.length == 0) days--;
                 }
+
+                if (!gerado) {
+                    console.error('🚨 Nenhum agendamento pôde ser gerado após várias tentativas. Quantidade de tentativas: ' + tentativas);
+                }
+
+                schedule.territories = array_gerado;
             }
 
 
-            if (!schedule.territories) return null;
+            if (!schedule.territories || schedule.territories.length == 0) {
+                console.log('Nenhum território disponível para agendamento! 🙈❌')
+                return null;
+            }
 
 
 
@@ -381,7 +412,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
                         }
 
                     }
-
+                    console.log('Agendamento efetuado com sucesso! ✅🎉🏆')
                     return formattedData
                 }
                 console.log('Nenhuma rodada criada! 🙈❌')
@@ -393,6 +424,23 @@ export class RoundsService<T = Rounds> extends Database<T> {
         } catch (err) {
             throw err
         }
+    }
+
+    async getAvaliableTerritories(days: number, cachelist: ia_info_territory[]): Promise<{ territorios_disponiveis: ia_info_territory[]; forCache: ia_info_territory[] }> {
+        console.log(' Consultando territórios disponíveis com ' + days + ' dias...')
+        if (cachelist.length > 0) {
+            console.log('💭 Cache disponível, consultando cache...')
+            return { territorios_disponiveis: cachelist.filter(x => (moment().diff(moment(x.last_schedule), 'days')) >= days), forCache: cachelist }
+        }
+
+        console.log('🎲 Cache vazio, consultando banco de dados...')
+        const territorios_disponiveis_30_dias: ia_info_territory[] = await sql`	select t.id,vlj.last_schedule,t.house_numbers from vw_last_job vlj 
+                join territories t on vlj.territory_id = t.id where (current_date - vlj.last_schedule) >= 0 order by vlj.territory_id `
+
+        const territorios_disponiveis = territorios_disponiveis_30_dias.filter(x => (moment().diff(moment(x.last_schedule), 'days')) >= days)
+
+        return { territorios_disponiveis: territorios_disponiveis, forCache: territorios_disponiveis_30_dias };
+
     }
 
     async getReturnSolicitation() {
