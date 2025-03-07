@@ -136,9 +136,9 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
                                     Identifique o nome do dirigente e também o dia que ele deseja agendar.
 
-                                    segue abaixo a lista de dirigentes cadastrados:
+                                    segue abaixo a lista de dirigentes cadastrados id-nome:
 
-                                    ${dirigentes?.map(dirigente => dirigente.name).join(', ')}
+                                    ${dirigentes?.map(dirigente => dirigente.id + ' - ' + dirigente.name).join(', ')}
 
                                     Apenas para sua referencia hoje é ${moment().format('YYYY-MM-DD')}
 
