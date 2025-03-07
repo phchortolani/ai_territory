@@ -380,21 +380,21 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     let leader_selected = leader_info[0]
 
                     if (!leader_selected) throw new Error('Leader selecionado nao encontrado')
-                    if (!leader_selected.telefone) leader_selected.telefone = telefone_ph;
+                    leader_selected.telefone = telefone_ph;
 
-                    const sended_start_info = await this.serviceWhatsapp.sendRoundInfoStartMessage(leader_selected?.telefone, leader_selected?.name)
+                    const sended_start_info = await this.serviceWhatsapp.sendRoundInfoStartMessage(telefone_ph, leader_selected?.name)
 
                     if (sended_start_info) {
                         console.log('Mensagem de início enviada para o irmão... 📲📩')
                         console.log('Enviando imagens...')
                         await new Promise(resolve => setTimeout(resolve, 1000));
-                        const send_images = await this.serviceWhatsapp.sendMultipleImages(leader_selected?.telefone, schedule.territories.map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
+                        const send_images = await this.serviceWhatsapp.sendMultipleImages(telefone_ph, schedule.territories.map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
 
                         if (send_images) {
                             console.log('Imagens enviadas com sucesso! 📲📩')
                             console.log('Enviando dados com o agendamento... 📲📩')
 
-                            const send_schedule = await this.serviceWhatsapp.sendMessage(leader_selected?.telefone, formattedData)
+                            const send_schedule = await this.serviceWhatsapp.sendMessage(telefone_ph, formattedData)
 
                             if (send_schedule) {
                                 console.log('Dados enviados com sucesso! 📲📩')
