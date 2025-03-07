@@ -3,5 +3,6 @@ export interface ISchedule {
     first_day: Date,
     campaign_id?: number,
     repeat_next_week?: boolean,
-    not_use_ia?: boolean
+    not_use_ia?: boolean,
+    notificar_whatsapp?: boolean
 }

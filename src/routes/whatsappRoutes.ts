@@ -140,6 +140,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     - 'Gere territórios'
                                     - 'gere territórios para mim'
                                     - 'me mande os territórios'
+                                    - 'preciso de territórios para hoje'
 
                                     Qualquer solicitação parecida com esses exemplos é considerada uma solicitação de agendamento.
                                   
@@ -171,26 +172,28 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         - Se não encontrar o dia, responda: **"SEM DIA"**  
                                         - Se não encontrar o dirigente (nem pelo nome, nem pelo telefone), responda: **"SEM DIRIGENTE"**  
                                         - Se não encontrar nem o dirigente nem o dia, responda: **"SEM DIA E DIRIGENTE"**  
-                                        - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"**  
+                                        - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"** 
+                                        - Se encontrar o dirigente e a data, mas o dirigente só foi encontrado pelo telefone, responda: **"ENCONTRADO_POR_TELEFONE,id,YYYY-MM-DD"** 
                                       
                                         🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**  
                                         `
                                     });
 
-
-                                    if (agendamento_texto.startsWith('SEM DIA')) {
-                                        await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dia que deseja agendar.');
-                                    }
-                                    if (agendamento_texto.startsWith('SEM DIRIGENTE')) {
-                                        await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dirigente que deseja agendar.');
-                                    }
                                     if (agendamento_texto.startsWith('SEM DIA E DIRIGENTE')) {
                                         await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dirigente e o dia que deseja agendar.');
+                                    } else {
+                                        if (agendamento_texto.startsWith('SEM DIA')) {
+                                            await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dia que deseja agendar.');
+                                        }
+                                        if (agendamento_texto.startsWith('SEM DIRIGENTE')) {
+                                            await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dirigente que deseja agendar.');
+                                        }
                                     }
+
                                     if (agendamento_texto.startsWith('DATA ANTERIOR A HOJE')) {
                                         await whatsappService.sendMessage(formattedMessage.from_number, 'A data informada é anterior a hoje. Por favor, informe uma data válida.');
                                     }
-                                    if (agendamento_texto.startsWith('ENCONTRADO')) {
+                                    if (agendamento_texto.startsWith('ENCONTRADO') || agendamento_texto.startsWith('ENCONTRADO_POR_TELEFONE')) {
                                         const agendamento = agendamento_texto.split(',');
                                         const dirigente_id = Number(agendamento[1]);
                                         const dia = agendamento[2];
@@ -200,7 +203,8 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                                 territories: [],
                                                 first_day: moment(dia).toDate(),
                                                 repeat_next_week: false,
-                                                not_use_ia: false
+                                                not_use_ia: false,
+                                                notificar_whatsapp: agendamento_texto.endsWith('ENCONTRADO_POR_TELEFONE'),
                                             }
                                             await roundsService.ToSchedule(agendamento, dirigente_id);
                                         } else {

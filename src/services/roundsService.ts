@@ -383,7 +383,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
 
                     if (!leader_selected) throw new Error('Leader selecionado nao encontrado')
-                    if (!leader_selected.telefone) leader_selected.telefone = telefone_ph;
+                    if (!leader_selected.telefone || !schedule.notificar_whatsapp) leader_selected.telefone = telefone_ph;
 
                     const sended_start_info = await this.serviceWhatsapp.sendRoundInfoStartMessage(leader_selected.telefone, leader_selected?.name)
 
