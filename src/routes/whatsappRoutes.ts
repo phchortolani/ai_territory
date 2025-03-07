@@ -123,14 +123,27 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
                             if (!!formattedMessage?.message_text) {
                                 const retorno = await getAI({
-                                    prompt: `Analise o seguinte texto: ${formattedMessage.message_text}. 
-                                Com base no texto acima, responda SOMENTE com SIM ou NÃO: O texto se trata de uma solicitação de agendamento de território?
-                                Exemplo de resposta: SIM
-                                `
+                                    prompt: `Analise o seguinte texto: "${formattedMessage.message_text}".  
+                                  
+                                    A pergunta é: **o texto trata de uma solicitação de agendamento ou geração de territórios?**
+                                    
+                                    as perguntas geralmente são:
+                                    - "Quero agendar um território"
+                                    - "Gere territórios para mim"
+                                    - "Gere territórios para o fulano de tal no dia tal"
+                                    - "Quero agendar um território para o fulano de tal no dia tal"
+                                    - "Gere territórios para o fulano de tal"  
+                                  
+                                    🔹 **Responda apenas com "SIM" ou "NÃO".** Nenhuma outra resposta é permitida.  
+                                  
+                                    **Exemplo de resposta:**  
+                                    - SIM  
+                                    - NÃO  
+                                    `
                                 });
 
                                 const dirigentes = await leadersService.list();
-                                if (retorno.toLocaleUpperCase() == 'SIM') {
+                                if (retorno.toLocaleUpperCase().endsWith('SIM')) {
 
                                     const agendamento_texto = await getAI({
                                         prompt: `Com base no seguinte texto: "${formattedMessage.message_text}", identifique:  
@@ -184,7 +197,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         }
                                     }
                                 } else {
-                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Não entendi a solicitação. Por favor, tente novamente.');
+                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Não entendi a solicitação por esse texto. Por favor, tente novamente.');
                                 }
                             }
                         }
