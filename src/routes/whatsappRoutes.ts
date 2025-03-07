@@ -132,26 +132,24 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                             if (retorno.toLocaleUpperCase() == 'SIM') {
 
                                 const agendamento_texto = await getAI({
-                                    prompt: `com base nesse texto: ${formattedMessage.message_text}.    
-
-                                    Identifique o nome do dirigente e também o dia que ele deseja agendar.
-
-                                    segue abaixo a lista de dirigentes cadastrados id-nome:
-
-                                    ${dirigentes?.map(dirigente => dirigente.id + ' - ' + dirigente.name).join(', ')}
-
-                                    Apenas para sua referencia hoje é ${moment().format('YYYY-MM-DD')}
-
-                                    responda com o status 'ENCONTRADO', id do dirigente e o dia (o dia deve ser no formato YYYY-MM-DD) que ele deseja agendar, separado por vírgula.
-
-                                    Exemplo de resposta: ENCONTRADO,1,2023-01-01
-
-                                    caso não tenha o dia, responda: 'SEM DIA'
-                                    caso não tenha o dirigente, responda: 'SEM DIRIGENTE'
-                                    caso não tenha o dia e o dirigente, responda: 'SEM DIA E DIRIGENTE'
-                                    caso a data seja anterior a hoje, responda: 'DATA ANTERIOR A HOJE'
-
-                                    NENHUM OUTRO TIPO DE RESPOSTA É VALIDA, SOMENTE AS INFORMADAS ACIMA.
+                                    prompt: `Com base no seguinte texto: "${formattedMessage.message_text}", identifique:  
+                                  
+                                    1. O nome do dirigente mencionado.  
+                                    2. O dia desejado para o agendamento.  
+                                  
+                                    Lista de dirigentes cadastrados (id - nome):  
+                                    ${dirigentes?.map(dirigente => `${dirigente.id} - ${dirigente.name}`).join(', ')}  
+                                  
+                                    Hoje é ${moment().format('YYYY-MM-DD')}.  
+                                  
+                                    **Regras de resposta:**  
+                                    - Se encontrar o dirigente e o dia, responda: **"ENCONTRADO,id,YYYY-MM-DD"**  
+                                    - Se não encontrar o dia, responda: **"SEM DIA"**  
+                                    - Se não encontrar o dirigente, responda: **"SEM DIRIGENTE"**  
+                                    - Se não encontrar nem o dirigente nem o dia, responda: **"SEM DIA E DIRIGENTE"**  
+                                    - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"**  
+                                  
+                                    🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**  
                                     `
                                 });
 
