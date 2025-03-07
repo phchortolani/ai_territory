@@ -197,7 +197,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         }
                                     }
                                 } else {
-                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Não entendi a solicitação por esse texto. Por favor, tente novamente.');
+                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Não entendi a solicitação por esse texto. Por favor, tente novamente: ' + retorno);
                                 }
                             }
                         }
