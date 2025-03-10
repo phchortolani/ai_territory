@@ -82,7 +82,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
             if (status?.length > 2) return
 
-            const Schedule: RoundsDto[] = await sql`select r.id, r.first_day, r.last_day ,r.expected_return ,l."name" as leader,c."name" as campaign, territory_id , 
+            const Schedule: RoundsDto[] = await sql`select r.id, r.first_day, r.last_day ,r.expected_return ,l."name" as leader,c."name" as campaign, territory_id, r.uid, 
             st."name" as status
             from rounds r 
             left join leaders l on l.id = r.leader 
@@ -91,6 +91,16 @@ export class RoundsService<T = Rounds> extends Database<T> {
             where status is not null ${status ? sql`and status = ${status}` : sql``}`;
 
             return Schedule;
+        } catch (err) {
+            console.log(err)
+            throw err
+        }
+    }
+
+    async deleteByUid(uid: string) {
+        try {
+            const deleted = await sql`delete from ${sql(this.table)} where uid = ${uid}`;
+            return deleted.count > 0;
         } catch (err) {
             console.log(err)
             throw err

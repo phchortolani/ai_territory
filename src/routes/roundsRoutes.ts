@@ -90,6 +90,20 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
 
     })
 
+    server.delete(`${path}/schedule/:uid`, async (request, reply) => {
+        await request.jwtVerify();
+        try {
+            console.log('deletando...')
+            const { uid } = request.params as any;
+            const deleted = await RoundsService.deleteByUid(uid);
+            console.log(deleted)
+            if (deleted) return reply.status(200).send()
+            return reply.status(502).send()
+        } catch (err) {
+            return reply.status(500).send(err)
+        }
+    })
+
     server.post(`${path}/markasdone/:leader_id`, async (request, reply) => {
         await request.jwtVerify();
         try {
