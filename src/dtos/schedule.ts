@@ -4,5 +4,6 @@ export interface ISchedule {
     campaign_id?: number,
     repeat_next_week?: boolean,
     not_use_ia?: boolean,
-    notificar_whatsapp?: boolean
+    notificar_whatsapp?: boolean,
+    house_number?: number
 }

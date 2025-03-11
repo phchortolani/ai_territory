@@ -225,16 +225,22 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         const agendamento = agendamento_texto.split(',');
                                         const dirigente_id = Number(agendamento[1]);
                                         const dia = agendamento[2];
+                                        let casas: number | undefined = undefined
+                                        //verifica se tem casas
+                                        if (agendamento[3]) {
+                                            casas = Number(agendamento[3]);
+                                        }
                                         const dirigente = dirigentes?.find(dirigente => dirigente.id == dirigente_id);
                                         if (dirigente) {
-                                            const agendamento = {
+                                            let schedule = {
                                                 territories: [],
                                                 first_day: moment(dia).toDate(),
                                                 repeat_next_week: false,
                                                 not_use_ia: false,
                                                 notificar_whatsapp: agendamento_texto.endsWith('ENCONTRADO_POR_TELEFONE'),
+                                                house_number: casas
                                             }
-                                            await roundsService.ToSchedule(agendamento, dirigente_id);
+                                            await roundsService.ToSchedule(schedule, dirigente_id);
                                         } else {
                                             await whatsappService.sendMessage(formattedMessage.from_number, 'Não encontrei o dirigente informado. Por favor, tente novamente.');
                                         }

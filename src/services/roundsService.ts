@@ -186,7 +186,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
         //caso não for proximo adicione ele na lista 2 e repita o processo para ele
 
-        // a primeira lista a ter mais de 120 casas ja será retornada.
+        // a primeira lista a ter mais de quantidade_minima_casas casas ja será retornada.
 
 
         // Criar uma lista 
@@ -194,7 +194,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
     }
 
     async ToSchedule(schedule: ISchedule, leader_id: number) {
-
+        let quantidade_minima_casas = schedule.house_number != undefined ? schedule.house_number : 120;
         try {
             let last_day: Date | null = moment(schedule.first_day).toDate();
 
@@ -274,17 +274,17 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
                         console.log('Quantidade de casas do grupo: ' + quantidade_casas_do_grupo);
 
-                        if (quantidade_casas_do_grupo < 120) {
-                            console.log(`⚠️ Grupo de territórios do território ${territorio_atual?.id} não atingiu a quantidade mínima de 120 casas.`);
+                        if (quantidade_casas_do_grupo < quantidade_minima_casas) {
+                            console.log(`⚠️ Grupo de territórios do território ${territorio_atual?.id} não atingiu a quantidade mínima de ${quantidade_minima_casas} casas.`);
                             tentativas++;
                         } else {
                             gerado = true;
-                            console.log(`✅ Grupo de territórios do território ${territorio_atual?.id} atingiu a quantidade mínima de 120 casas. Gerando agendamento...`);
+                            console.log(`✅ Grupo de territórios do território ${territorio_atual?.id} atingiu a quantidade mínima de ${quantidade_minima_casas} casas. Gerando agendamento...`);
 
                             let contador_casas_grupo = 0;
 
                             grupo_de_territorios_para_verificacao.forEach(territorio => {
-                                if (contador_casas_grupo >= 120) return;
+                                if (contador_casas_grupo >= quantidade_minima_casas) return;
                                 console.log('Adicionando território: ' + territorio.id);
                                 contador_casas_grupo += territorio?.house_numbers ?? 0;
                                 array_gerado.push(territorio.id);
