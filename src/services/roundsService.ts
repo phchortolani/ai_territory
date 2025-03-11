@@ -401,7 +401,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
                         console.log('Mensagem de início enviada para o irmão... 📲📩')
                         console.log('Enviando imagens...')
                         await new Promise(resolve => setTimeout(resolve, 1000));
-                        const send_images = await this.serviceWhatsapp.sendMultipleImages(leader_selected.telefone, schedule.territories.map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
+                        const send_images = await this.serviceWhatsapp.sendMultipleImages(leader_selected.telefone, schedule.territories.sort((a, b) => a - b).map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
 
                         if (send_images) {
                             console.log('Imagens enviadas com sucesso! 📲📩')
