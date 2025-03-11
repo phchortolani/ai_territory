@@ -121,9 +121,13 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                             await whatsappService.processMessage(formattedMessage);
                             log_message = 'message processed with success.';
 
+                            if (!formattedMessage?.message_text) return reply.status(200).send('Message received');
+
+                            const safeMessage = formattedMessage?.message_text.replace(/[`~$^*|{}[\]\\]/g, '')
+
                             if (!!formattedMessage?.message_text) {
                                 const retorno = await getAI({
-                                    prompt: `Analise o seguinte texto: "${formattedMessage.message_text}".  
+                                    prompt: `Analise o seguinte texto: "${safeMessage}".  
                                   
                                     A pergunta é: **o texto trata de uma solicitação de agendamento ou geração de territórios?**
                                     
@@ -152,35 +156,39 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     `
                                 });
 
+
                                 const dirigentes = await leadersService.list();
                                 if (retorno.toUpperCase().trim() === 'SIM') {
 
                                     const agendamento_texto = await getAI({
-                                        prompt: `Com base no seguinte texto: "${formattedMessage.message_text}", identifique:  
-                                      
-                                        1. O nome do dirigente mencionado (o nome do dirigente pode ser escrito com ou sem acentuação, ou com ou sem espaços, ou com ou sem letras maiúsculas).  
-                                        2. O dia desejado para o agendamento.  
-                                        3. Se o nome do dirigente **não for mencionado**, verifique na lista de dirigentes se o telefone **${formattedMessage.from_number}** está cadastrado e associe-o ao dirigente correspondente.  
-                                      
-                                        **Lista de dirigentes cadastrados (id - nome - telefone):**  
-                                        ${dirigentes?.map(dirigente => `ID: ${dirigente.id} - NOME: ${dirigente.name} - TELEFONE: ${dirigente?.telefone}`).join(', ')}  
-                                      
-                                        **Data atual:** ${moment().subtract(3, 'hours').format('YYYY-MM-DD')}.  
-                                      
-                                        **Regras de resposta:**  
-                                        - Se encontrar o dirigente e o dia, responda: **"ENCONTRADO,id,YYYY-MM-DD"**  
-                                        - Se não encontrar o dia, responda: **"SEM DIA"**  
-                                        - Se não encontrar o dirigente (nem pelo nome, nem pelo telefone), responda: **"SEM DIRIGENTE"**  
-                                        - Se não encontrar nem o dirigente nem o dia, responda: **"SEM DIA E DIRIGENTE"**  
-                                        - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"**  
-                                        - Se o dirigente **foi identificado apenas pelo telefone**, responda: **"ENCONTRADO_POR_TELEFONE,id,YYYY-MM-DD"**  
-                                        - Se o texto for totalmente diferente de uma solicitação de agendamento, responda: **"NÃO É UMA SOLICITAÇÃO DE AGENDAMENTO"**
-                                      
-                                        🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**  
+                                        prompt: `
+                                        Com base no seguinte texto: "${safeMessage}", faça o seguinte:
+                                    
+                                        1. Identifique o **nome do dirigente** mencionado. O nome pode estar com ou sem acentuação, com ou sem espaços, e com ou sem letras maiúsculas.
+                                        2. Identifique o **dia desejado para o agendamento**.
+                                        3. Caso o nome do dirigente **não seja mencionado**, verifique na lista de dirigentes se o telefone **${formattedMessage.from_number}** está cadastrado e associe-o ao dirigente correspondente.
+                                        
+                                        **Lista de dirigentes cadastrados (id - nome - telefone):**
+                                        ${dirigentes?.map(dirigente => `ID: ${dirigente.id} - NOME: ${dirigente.name} - TELEFONE: ${dirigente?.telefone}`).join(', ')}
+                                    
+                                        **Data atual:** ${moment().subtract(3, 'hours').format('YYYY-MM-DD')}.
+                                    
+                                        **Regras de resposta:**
+                                        - Se encontrar o dirigente, o dia, e uma quantidade de casas desejadas no texto, responda: **"ENCONTRADO,id,YYYY-MM-DD,casas"** (onde "casas" representa o número de casas).
+                                        - Se não houver menção de "casas", mas encontrar o dirigente e o dia, responda: **"ENCONTRADO,id,YYYY-MM-DD"**.
+                                        - Se não encontrar o dia: **"SEM DIA"**.
+                                        - Se não encontrar o dirigente (nem pelo nome, nem pelo telefone): **"SEM DIRIGENTE"**.
+                                        - Se não encontrar nem o dirigente nem o dia: **"SEM DIA E DIRIGENTE"**.
+                                        - Se a data for anterior a hoje: **"DATA ANTERIOR A HOJE"**.
+                                        - Se o dirigente for identificado **apenas pelo telefone**: **"ENCONTRADO_POR_TELEFONE,id,YYYY-MM-DD"**.
+                                        - Se o texto for **totalmente diferente** de uma solicitação de agendamento: **"SOLICITACAO_INVALIDA"**.
+                                    
+                                        🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**
                                         `
                                     });
 
-                                    if (agendamento_texto.startsWith('NÃO É UMA SOLICITAÇÃO DE AGENDAMENTO')) {
+
+                                    if (agendamento_texto.startsWith('SOLICITACAO_INVALIDA')) {
                                         await whatsappService.sendMessage(formattedMessage.from_number, 'Estou disponível para agendamentos. Por favor, informe o dirigente e o dia que deseja agendar.');
                                     }
 
@@ -217,7 +225,11 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         }
                                     }
                                 } else {
-                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Não entendi a solicitação por esse texto. Por favor, tente novamente:');
+                                    if (formattedMessage?.message_text.startsWith('[IA]')) {
+                                        const ret_ia_text = await getAI({ prompt: formattedMessage?.message_text.replace("[IA]", "") });
+                                        await whatsappService.sendMessage(formattedMessage.from_number, ret_ia_text);
+                                    }
+                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Mensagem recebida e registrada com sucesso!');
                                 }
                             }
                         }
