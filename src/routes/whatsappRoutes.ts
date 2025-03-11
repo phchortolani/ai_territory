@@ -158,7 +158,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     const agendamento_texto = await getAI({
                                         prompt: `Com base no seguinte texto: "${formattedMessage.message_text}", identifique:  
                                       
-                                        1. O nome do dirigente mencionado.  
+                                        1. O nome do dirigente mencionado (o nome do dirigente pode ser escrito com ou sem acentuação, ou com ou sem espaços, ou com ou sem letras maiúsculas).  
                                         2. O dia desejado para o agendamento.  
                                         3. Se o nome do dirigente **não for mencionado**, verifique na lista de dirigentes se o telefone **${formattedMessage.from_number}** está cadastrado e associe-o ao dirigente correspondente.  
                                       
@@ -174,11 +174,15 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         - Se não encontrar nem o dirigente nem o dia, responda: **"SEM DIA E DIRIGENTE"**  
                                         - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"**  
                                         - Se o dirigente **foi identificado apenas pelo telefone**, responda: **"ENCONTRADO_POR_TELEFONE,id,YYYY-MM-DD"**  
+                                        - Se o texto for totalmente diferente de uma solicitação de agendamento, responda: **"NÃO É UMA SOLICITAÇÃO DE AGENDAMENTO"**
                                       
                                         🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**  
                                         `
-                                      });
-                                      
+                                    });
+
+                                    if (agendamento_texto.startsWith('NÃO É UMA SOLICITAÇÃO DE AGENDAMENTO')) {
+                                        await whatsappService.sendMessage(formattedMessage.from_number, 'Estou disponível para agendamentos. Por favor, informe o dirigente e o dia que deseja agendar.');
+                                    }
 
                                     if (agendamento_texto.startsWith('SEM DIA E DIRIGENTE')) {
                                         await whatsappService.sendMessage(formattedMessage.from_number, 'Por favor, informe o dirigente e o dia que deseja agendar.');
