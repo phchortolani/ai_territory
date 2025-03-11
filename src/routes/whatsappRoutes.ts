@@ -127,11 +127,12 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
 
                             if (!!formattedMessage?.message_text) {
                                 const retorno = await getAI({
-                                    prompt: `Analise o seguinte texto: "${safeMessage}".  
-                                  
+                                    prompt: `
+                                    Analise o seguinte texto: "${safeMessage}".  
+                                
                                     A pergunta é: **o texto trata de uma solicitação de agendamento ou geração de territórios?**
-                                    
-                                    as perguntas geralmente são:
+                                
+                                    As perguntas geralmente são:
                                     - "Quero agendar um território"
                                     - "Gere territórios para mim"
                                     - "Gere territórios para o fulano de tal no dia tal"
@@ -145,11 +146,20 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     - 'gere territórios para mim'
                                     - 'me mande os territórios'
                                     - 'preciso de territórios para hoje'
-
-                                    Qualquer solicitação parecida com esses exemplos é considerada uma solicitação de agendamento.
-                                  
+                                    - 'Gere territórios para o fulano amanhã'
+                                    - 'Gere territórios para [nome] depois de amanhã'
+                                    - 'Agende os territórios para mim'
+                                    - 'Organize os territórios para amanhã'
+                                    - 'Programe os territórios para [nome] no dia tal'
+                                    - 'Preciso de agendamento de territórios'
+                                    - 'Me ajude com os territórios para o dia [data]'
+                                    - 'Quero gerar territórios para o [nome]'
+                                    - 'Solicito os territórios para [nome] na data [data]'
+                                    
+                                    Qualquer solicitação parecida com esses exemplos é considerada uma solicitação de geração de territórios.
+                                
                                     🔹 **Responda apenas com "SIM" ou "NÃO".** Nenhuma outra resposta é permitida.  
-                                  
+                                
                                     **Exemplo de resposta:**  
                                     - SIM  
                                     - NÃO  
