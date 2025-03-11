@@ -174,10 +174,10 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         prompt: `
                                         Com base no seguinte texto: "${safeMessage}", faça o seguinte:
                                     
-                                        1. Identifique o **nome do dirigente** mencionado. O nome pode estar com ou sem acentuação, com ou sem espaços, e com ou sem letras maiúsculas.
-                                        2. Identifique o **dia desejado para o agendamento**.
+                                        1. **Identifique o nome do dirigente** mencionado. O nome pode estar com ou sem acentuação, com ou sem espaços extras, e com ou sem letras maiúsculas/minúsculas. Considere também variações comuns do nome, como abreviações ou erros de digitação.
+                                        2. **Identifique o dia desejado para o agendamento**.
                                         3. Caso o nome do dirigente **não seja mencionado**, verifique na lista de dirigentes se o telefone **${formattedMessage.from_number}** está cadastrado e associe-o ao dirigente correspondente.
-                                        
+                                    
                                         **Lista de dirigentes cadastrados (id - nome - telefone):**
                                         ${dirigentes?.map(dirigente => `ID: ${dirigente.id} - NOME: ${dirigente.name} - TELEFONE: ${dirigente?.telefone}`).join(', ')}
                                     
@@ -186,16 +186,21 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         **Regras de resposta:**
                                         - Se encontrar o dirigente, o dia, e uma quantidade de casas desejadas no texto, responda: **"ENCONTRADO,id,YYYY-MM-DD,casas"** (onde "casas" representa o número de casas).
                                         - Se não houver menção de "casas", mas encontrar o dirigente e o dia, responda: **"ENCONTRADO,id,YYYY-MM-DD"**.
-                                        - Se não encontrar o dia: **"SEM DIA"**.
-                                        - Se não encontrar o dirigente (nem pelo nome, nem pelo telefone): **"SEM DIRIGENTE"**.
-                                        - Se não encontrar nem o dirigente nem o dia: **"SEM DIA E DIRIGENTE"**.
-                                        - Se a data for anterior a hoje: **"DATA ANTERIOR A HOJE"**.
-                                        - Se o dirigente for identificado **apenas pelo telefone**: **"ENCONTRADO_POR_TELEFONE,id,YYYY-MM-DD"**.
-                                        - Se o texto for **totalmente diferente** de uma solicitação de agendamento: **"SOLICITACAO_INVALIDA"**.
+                                        - Se não encontrar o dia, responda: **"SEM DIA"**.
+                                        - Se não encontrar o dirigente (nem pelo nome, nem pelo telefone), responda: **"SEM DIRIGENTE"**.
+                                        - Se não encontrar nem o dirigente nem o dia, responda: **"SEM DIA E DIRIGENTE"**.
+                                        - Se a data for anterior a hoje, responda: **"DATA ANTERIOR A HOJE"**.
+                                        - Se o dirigente for identificado **apenas pelo telefone**, responda: **"ENCONTRADO_POR_TELEFONE,id,YYYY-MM-DD"**.
+                                        - Se o texto for **totalmente diferente** de uma solicitação de agendamento, responda: **"SOLICITACAO_INVALIDA"**.
                                     
                                         🚨 **Apenas essas respostas são válidas. Não forneça nenhuma outra resposta.**
+                                    
+                                        Dicas:
+                                        - Para identificar corretamente os nomes, trate as comparações de forma insensível a maiúsculas/minúsculas e acentuação.
+                                        - Considere que o nome pode estar escrito de maneira incompleta ou abreviada.
                                         `
                                     });
+
 
 
                                     if (agendamento_texto.startsWith('SOLICITACAO_INVALIDA')) {
