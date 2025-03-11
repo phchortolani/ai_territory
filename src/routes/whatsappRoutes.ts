@@ -225,11 +225,13 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         }
                                     }
                                 } else {
-                                    if (formattedMessage?.message_text.startsWith('[IA]')) {
+                                    if (formattedMessage?.message_text.toUpperCase().startsWith('[IA]')) {
                                         const ret_ia_text = await getAI({ prompt: formattedMessage?.message_text.replace("[IA]", "") });
                                         await whatsappService.sendMessage(formattedMessage.from_number, ret_ia_text);
+                                    } else {
+                                        await whatsappService.sendMessage(formattedMessage.from_number, 'Mensagem recebida e registrada com sucesso!');
                                     }
-                                    await whatsappService.sendMessage(formattedMessage.from_number, 'Mensagem recebida e registrada com sucesso!');
+
                                 }
                             }
                         }
