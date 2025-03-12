@@ -198,7 +198,6 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     
                                         Dicas:
                                         - Para identificar corretamente as "casas", busque números seguidos de palavras como "casas", "unidades", "imóveis" e similares.
-                                        - Caso a quantidade de casas não seja explicitamente mencionada, assuma o valor informado como a quantidade total, ou use "mínimo de casas" quando indicado.
                                         - Caso o dirigente não seja identificado diretamente no texto, consulte a lista de dirigentes com base no telefone.
                                         `
                                     });
