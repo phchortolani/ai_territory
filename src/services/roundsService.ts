@@ -355,7 +355,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
                     formattedData += `Saída: *${first_day}* ${last_day != first_day ? `| 2ª Saída: *${last_day}*` : ''}\n\n`;
                     formattedData += `*Dirigente:* \n 🧑🏻‍💼 *${leader_selected.name}*\n\n`;
-                    formattedData += `*Territórios:* \n 🗺️ *${RoundsCreated.map((rounds) => rounds.territory_id).join(', ')}*\n\n`;
+                    formattedData += `*Territórios:* \n 🗺️ *${RoundsCreated.sort((a, b) => a.territory_id - b.territory_id).map((rounds) => rounds.territory_id).join(', ')}*\n\n`;
 
                     formattedData += `*Informações adicionais:*\n`;
 
