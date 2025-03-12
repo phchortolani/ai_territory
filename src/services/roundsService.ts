@@ -194,7 +194,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
     }
 
     async ToSchedule(schedule: ISchedule, leader_id: number) {
-        let quantidade_minima_casas = schedule.house_number != undefined ? schedule.house_number : 120;
+        let quantidade_minima_casas = schedule?.house_number ? schedule.house_number : 120;
         try {
             let last_day: Date | null = moment(schedule.first_day).toDate();
 
