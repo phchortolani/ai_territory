@@ -176,7 +176,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                     
                                         1. **Identifique o nome do dirigente** mencionado. O nome pode estar com ou sem acentuação, com ou sem espaços extras, e com ou sem letras maiúsculas/minúsculas. Considere também variações comuns do nome, como abreviações ou erros de digitação.
                                         2. **Identifique o dia desejado para o agendamento**. Caso a data não seja especificada de forma clara, considere uma data aproximada com base nas palavras "daqui a X dias", "amanhã", "depois de amanhã", entre outras expressões semelhantes.
-                                        3. **Identifique a quantidade de casas mencionadas** no texto. Caso o número de casas não seja explicitamente dado, considere como "mínimo de casas" se tal expressão for utilizada ou assuma que o número indicado é o total. A quantidade deve ser um número seguido da palavra "casas" (ou palavras relacionadas como "unidades", "imóveis", etc.). Exemplo: "500 casas" deve ser interpretado como 500 casas.
+                                        3. **Identifique a quantidade de casas mencionadas** no texto. Caso o número de casas não seja explicitamente dado, considere como "mínimo de casas" se tal expressão for utilizada ou assuma que o número indicado é o total. A quantidade deve ser um número seguido da palavra "casas" (ou palavras relacionadas como "unidades", "imóveis", etc.). Exemplo: "500 casas" deve ser interpretado como 500.
                                         4. Caso o nome do dirigente **não seja mencionado**, verifique na lista de dirigentes se o telefone **${formattedMessage.from_number}** está cadastrado e associe-o ao dirigente correspondente.
                                     
                                         **Lista de dirigentes cadastrados (id - nome - telefone):**
@@ -185,7 +185,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         **Data atual:** ${moment().subtract(3, 'hours').format('YYYY-MM-DD')}.
                                     
                                         **Regras de resposta:**
-                                        - Se encontrar o dirigente, o dia, e a quantidade de casas desejadas no texto, responda: **"ENCONTRADO,id,YYYY-MM-DD,casas"** (onde "casas" representa o número de casas).
+                                        - Se encontrar o dirigente, o dia, e a quantidade de casas desejadas no texto, responda: **"ENCONTRADO,id,YYYY-MM-DD,casas"** (onde "casas" representa o número de casas, preencha somente com o número).
                                         - Se não houver menção de "casas", mas encontrar o dirigente e o dia, responda: **"ENCONTRADO,id,YYYY-MM-DD"**.
                                         - Se não encontrar o dia, responda: **"SEM DIA"**.
                                         - Se não encontrar o dirigente (nem pelo nome, nem pelo telefone), responda: **"SEM DIRIGENTE"**.
