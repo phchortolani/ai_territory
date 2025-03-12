@@ -231,7 +231,6 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         //verifica se tem casas
                                         if (agendamento[3]) {
                                             casas = Number(agendamento[3]);
-                                            await whatsappService.sendMessage(formattedMessage.from_number, `Quantidade de casas: ${casas}`);
                                         }
                                         const dirigente = dirigentes?.find(dirigente => dirigente.id == dirigente_id);
                                         if (dirigente) {
