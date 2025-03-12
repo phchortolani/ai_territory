@@ -198,6 +198,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
                                         Dicas:
                                         - Para identificar corretamente os nomes, trate as comparações de forma insensível a maiúsculas/minúsculas e acentuação.
                                         - Considere que o nome pode estar escrito de maneira incompleta ou abreviada.
+                                        - Caso a quantidade de casas não seja explicitamente mencionada, veja se foi especificada como "mínimo de casas" ou algo parecido, use o valor indicado, caso realmente não seja mencionado responda conforme as regras já estabelecidas.
                                         `
                                     });
 
