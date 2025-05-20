@@ -51,6 +51,19 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
 
     })
 
+    server.get(`${path}/heatmap/weekly`, async (request, reply) => {
+        await request.jwtVerify();
+        try {
+            console.log('Buscando heatmap...')
+            const result = await RoundsService.getWeeklyHeatmap();
+            console.log('Heatmap encontrado.')
+            if (!result) return reply.status(404).send('Nenhum dado encontrado.')
+            return reply.status(200).send(result);
+        } catch (err) {
+            return reply.status(500).send(err);
+        }
+    });
+
     server.get(`${path}/schedule/roundsByUID/:uid`, async (request, reply) => {
         await request.jwtVerify();
         try {

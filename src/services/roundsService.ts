@@ -16,6 +16,7 @@ import { IaExampleHistory } from "../models/IA/ia_example_history";
 import { WhatsappService } from "./whatsappService";
 import { randomUUID } from 'crypto'
 import { Leaders } from "../models/leaders";
+import { WeekAndTerritoryDTO } from "../dtos/weekAndTerritoryDto";
 
 interface info_send_grid_devolution {
     name: string,
@@ -534,6 +535,16 @@ export class RoundsService<T = Rounds> extends Database<T> {
         if (territories.length == 0) return []
 
         return territories
+    }
+
+    async getWeeklyHeatmap(): Promise<WeekAndTerritoryDTO[]> {
+        try {
+            const result = await sql<WeekAndTerritoryDTO[]>`SELECT * FROM vw_week_and_territory`;
+            return result;
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
     }
 
 }
