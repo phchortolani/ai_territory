@@ -77,6 +77,19 @@ export default function RoundsRoutes(server: FastifyInstance, RoundsService: Rou
         }
     });
 
+    server.get(`${path}/effectiveness`, async (request, reply) => {
+        await request.jwtVerify();
+        try {
+            console.log('Buscando effectiveness...')
+            const result = await RoundsService.getEffectiveness();
+            console.log('effectiveness encontrado.')
+            if (!result) return reply.status(404).send('Nenhum dado encontrado.')
+            return reply.status(200).send(result);
+        } catch (err) {
+            return reply.status(500).send(err);
+        }
+    });
+
     server.get(`${path}/schedule/roundsByUID/:uid`, async (request, reply) => {
         await request.jwtVerify();
         try {

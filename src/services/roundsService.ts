@@ -18,6 +18,7 @@ import { randomUUID } from 'crypto'
 import { Leaders } from "../models/leaders";
 import { WeekAndTerritoryDTO } from "../dtos/weekAndTerritoryDto";
 import { RankRoundCompleted } from "../dtos/roundCompleted";
+import { vw_effectiveness } from "../dtos/vw_effectiveness";
 
 
 interface info_send_grid_devolution {
@@ -553,6 +554,16 @@ export class RoundsService<T = Rounds> extends Database<T> {
         try {
             const result = await sql<RankRoundCompleted[]>`SELECT * FROM vw_rank_round_completed`;
             return result.map(x => ({ ...x, round_completed: Number(x.round_completed) }));
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
+    }
+
+    async getEffectiveness(): Promise<vw_effectiveness[]> {
+        try {
+            const result = await sql<vw_effectiveness[]>`SELECT * FROM vw_effectiveness`;
+            return result;
         } catch (err) {
             console.error(err);
             throw err;
