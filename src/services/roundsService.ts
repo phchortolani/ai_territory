@@ -17,6 +17,8 @@ import { WhatsappService } from "./whatsappService";
 import { randomUUID } from 'crypto'
 import { Leaders } from "../models/leaders";
 import { WeekAndTerritoryDTO } from "../dtos/weekAndTerritoryDto";
+import { RankRoundCompleted } from "../dtos/roundCompleted";
+
 
 interface info_send_grid_devolution {
     name: string,
@@ -541,6 +543,16 @@ export class RoundsService<T = Rounds> extends Database<T> {
         try {
             const result = await sql<WeekAndTerritoryDTO[]>`SELECT * FROM vw_week_and_territory`;
             return result;
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
+    }
+
+    async getRankRoundCompleted(): Promise<RankRoundCompleted[]> {
+        try {
+            const result = await sql<RankRoundCompleted[]>`SELECT * FROM vw_rank_round_completed`;
+            return result.map(x => ({ ...x, round_completed: Number(x.round_completed) }));
         } catch (err) {
             console.error(err);
             throw err;
