@@ -20,4 +20,14 @@ export class TerritoryService<T = Territory> extends Database<T> {
             throw err
         }
     }
+
+    async getTerritoriesAvaliable() {
+        try {
+            const territoriesList: Territory[] = await sql`select * from vw_territories_avaliable`
+            return territoriesList;
+        } catch (err) {
+            console.log(err)
+            throw err
+        }
+    }
 }
