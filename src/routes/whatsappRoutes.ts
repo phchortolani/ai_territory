@@ -268,7 +268,7 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
             console.error('Erro ao receber mensagem:', JSON.stringify(error));
             console.error('log_message:', log_message);
             await new UserLogService({ user_id: 1, action: 'Error receiving message.', origin: path, description: JSON.stringify(error) }).log();
-            await whatsappService.sendMessage('5511957886697', 'Erro ao receber webhook do whatsapp: ' + JSON.stringify(error));
+            await whatsappService.sendMessage('5511957886697', 'Erro ao receber webhook do whatsapp: ' + JSON.stringify(error) + 'log_message:' + {log_message});
             return reply.status(500).send('Internal Server Error');
         }
 
