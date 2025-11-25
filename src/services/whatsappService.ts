@@ -280,5 +280,49 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
     }
 
 
+    //TODO: RETIRAR PROJETO
+
+     async sendWhisperProcessed(to: string, fileName: string) {
+        try {
+            console.log('Enviando template utilitário para:', to);
+
+            const url = `${this.metaUrl}${this.phoneNumberId}/messages`;
+
+            const body = {
+                messaging_product: "whatsapp",
+                recipient_type: "individual",
+                to: to,
+                type: "template",
+                template: {
+                    name: "whisper_status",
+                    language: { code: "pt_BR" },
+                    components: [
+                        {
+                            type: "body",
+                            parameters: [
+                                { type: "text", parameter_name: "arquivo", text: fileName }
+                            ]
+                        }
+                    ]
+                }
+            };
+
+            // console.log('Body:', JSON.stringify(body, null, 2));
+
+            const response = await axios.post(url, body, {
+                headers: {
+                    'Authorization': `Bearer ${this.accessToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            // console.log('Resposta da API:', response.data);
+            return response.status == 200;
+        } catch (error: any) {
+            console.error('Erro ao enviar template utilitário:', error.response?.data || error.message);
+            throw error;
+        }
+    }
+
 }
 

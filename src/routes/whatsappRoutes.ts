@@ -268,7 +268,30 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
             console.error('Erro ao receber mensagem:', JSON.stringify(error));
             console.error('log_message:', log_message);
             await new UserLogService({ user_id: 1, action: 'Error receiving message.', origin: path, description: JSON.stringify(error) }).log();
-            await whatsappService.sendMessage('5511957886697', 'Erro ao receber webhook do whatsapp: ' + JSON.stringify(error) + 'log_message:' + {log_message});
+            await whatsappService.sendMessage('5511957886697', 'Erro ao receber webhook do whatsapp: ' + JSON.stringify(error) + 'log_message:' + { log_message });
+            return reply.status(500).send('Internal Server Error');
+        }
+
+    });
+
+    server.post(`${path}/whisperStatus`, async (request, reply) => {
+
+        try {
+            const { to, fileName, privateKey } = request.body as { to: string, fileName: string, privateKey: string };
+
+            if(!to || !fileName) return reply.status(400).send('To and fileName are required.');
+            
+            if (privateKey !== process.env.WHISPER_PRIVATE_KEY) return reply.status(403).send('Forbidden');
+                
+            await whatsappService.sendWhisperProcessed(to, fileName);
+
+            await new UserLogService({ user_id: 1, action: 'send whisper status.', origin: path }).log();
+            
+            return reply.status(200).send('Message received');
+        } catch (error) {
+            console.error('Erro ao enviar mensagem:', JSON.stringify(error));
+            await new UserLogService({ user_id: 1, action: 'Error sending message.', origin: path, description: JSON.stringify(error) }).log();
+
             return reply.status(500).send('Internal Server Error');
         }
 
