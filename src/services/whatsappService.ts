@@ -316,7 +316,9 @@ export class WhatsappService<T = WhatsappChallenge> extends Database<T> {
                 }
             });
 
-            // console.log('Resposta da API:', response.data);
+
+
+             console.log('Resposta da API:', response.data);
             return response.status == 200;
         } catch (error: any) {
             console.error('Erro ao enviar template utilitário:', error.response?.data || error.message);

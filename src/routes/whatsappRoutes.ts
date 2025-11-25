@@ -283,7 +283,9 @@ export default function WhatsappRoutes(server: FastifyInstance, whatsappService:
             
             if (privateKey !== process.env.WHISPER_PRIVATE_KEY) return reply.status(403).send('Forbidden');
                 
-            await whatsappService.sendWhisperProcessed(to, fileName);
+           const response = await whatsappService.sendWhisperProcessed(to, fileName);
+
+           if(!response) return reply.status(500).send('Error sending message.');
 
             await new UserLogService({ user_id: 1, action: 'send whisper status.', origin: path }).log();
             
