@@ -140,7 +140,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
     async ToSchedule(schedule: ISchedule, leader_id: number) {
         let quantidade_minima_casas = schedule?.house_number ? schedule.house_number : 120;
-        let quantidade_minima_comercios = schedule?.business_number ? schedule.business_number : 100;
+        let quantidade_minima_comercios = schedule?.business_number ? schedule.business_number : 70;
 
         try {
             let last_day: Date | null = moment(schedule.first_day).toDate();
@@ -446,14 +446,23 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
     async getAvailableTerritoriesBusiness(days: number, cachelist: ia_info_territory[]): Promise<{ territorios_disponiveis: ia_info_territory[]; forCache: ia_info_territory[] }> {
 
+        if (cachelist.length > 0) {
+            console.log('💭 Cache disponível, consultando cache...')
+            return { territorios_disponiveis: cachelist.filter(x => (moment().diff(moment(x.last_schedule), 'days')) >= days), forCache: cachelist }
+        }
+
         console.log(' Consultando territórios comerciais disponíveis com ' + days + ' dias...')
-        const territorios_disponiveis_30_dias: ia_info_territory[] = await sql`	select 	t.id,
-                                                                                vlj.last_day,
-                                                                                t.business_numbers 
-                                                                        from territories t 
-                                                                        left join vw_last_job_business vlj on vlj.territory_id = t.id and (current_date - vlj.last_day) >= 0 
-                                                                        where t.business_numbers > 0
-                                                                        order by t.id `
+        const territorios_disponiveis_30_dias: ia_info_territory[] = await sql`		
+       select 
+															t.id,
+											    			max(r.last_day) AS last_schedule,
+											    			r.status,
+											    			t.business_numbers
+        from territories t
+        left join rounds r on r.territory_id = t.id 
+        where t.id not in (select r2.territory_id from rounds r2 where r2.status = 2 and r2.is_business) and r.status = 1 and t.business_numbers > 0
+        group by t.id, r.status
+        order by id `
 
         const territorios_disponiveis = territorios_disponiveis_30_dias.filter(x => (moment().diff(moment(x.last_schedule), 'days')) >= days)
 
