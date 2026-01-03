@@ -5,5 +5,7 @@ export interface ISchedule {
     repeat_next_week?: boolean,
     not_use_ia?: boolean,
     notificar_whatsapp?: boolean,
-    house_number?: number
+    house_number?: number,
+    business_number?: number,
+    is_business?: boolean
 }

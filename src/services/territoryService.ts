@@ -21,9 +21,17 @@ export class TerritoryService<T = Territory> extends Database<T> {
         }
     }
 
-    async getTerritoriesAvaliable() {
+    async getTerritoriesAvaliable(isBusiness?: boolean) {
         try {
+            if (isBusiness) {
+                console.log('Buscando territórios comerciais disponíveis...')
+                const businessTerritoryList: Territory[] = await sql`select * from vw_territories_avaliable_business`
+                console.log(businessTerritoryList.length + ' territórios comerciais disponíveis.')
+                return businessTerritoryList;
+            }
+            console.log('Buscando territórios residenciais disponíveis...')
             const territoriesList: Territory[] = await sql`select * from vw_territories_avaliable`
+            console.log(territoriesList.length + ' territórios residenciais disponíveis.')
             return territoriesList;
         } catch (err) {
             console.log(err)

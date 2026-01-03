@@ -7,12 +7,9 @@ import { ReturnSolicitationDto } from "../dtos/returnSolicitation";
 import 'moment/locale/pt-br';
 import { RoundsDto } from "../dtos/roundsDto";
 import { S13, S13_Item } from "../dtos/s13";
-import { getAI } from "./geminiService";
 import { ia_info_territory } from "../models/territory";
 import { IATerritoriesInfo } from "../models/IA/ia_territories_info";
-import { checkNearTerritories, checkNearTerritoriesV2, checkQuantityIsValid, getNear } from "../utils/getNear";
-import { getDefaultPrompt } from "../utils/getPrompt";
-import { IaExampleHistory } from "../models/IA/ia_example_history";
+import { getNear } from "../utils/getNear";
 import { WhatsappService } from "./whatsappService";
 import { randomUUID } from 'crypto'
 import { Leaders } from "../models/leaders";
@@ -21,10 +18,6 @@ import { RankRoundCompleted } from "../dtos/roundCompleted";
 import { vw_effectiveness } from "../dtos/vw_effectiveness";
 
 
-interface info_send_grid_devolution {
-    name: string,
-    leaders: { leader_name: string }[]
-}
 
 interface vw_house_not_allowed {
     id: number,
@@ -87,7 +80,8 @@ export class RoundsService<T = Rounds> extends Database<T> {
             if (status?.length > 2) return
 
             const Schedule: RoundsDto[] = await sql`select r.id, r.first_day, r.last_day ,r.expected_return ,l."name" as leader,c."name" as campaign, territory_id, r.uid, 
-            st."name" as status
+            st."name" as status,
+            r.is_business
             from rounds r 
             left join leaders l on l.id = r.leader 
             left join campaign c on c.id  = r.campaign 
@@ -144,61 +138,10 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
     }
 
-    async ToScheduleRaiz(schedule: ISchedule, leader_id: number) {
-
-        /*   let last_day: Date | null = moment(schedule.first_day).toDate();
-  
-          if (moment(schedule.first_day).isoWeekday() !== 6 && schedule.repeat_next_week) {
-              last_day = moment(schedule.first_day).add(7, 'days').toDate();
-          }
-  
-          const expected_return = last_day;
-  
-          if (schedule.territories?.some(x => x == 0)) throw new Error('O agendamento possui territórios com o ID 0');
-  
-          const rounds = ((await this.list()) as Rounds[]).filter(x => schedule.territories?.includes(x.territory_id));
-  
-          const DataInRange = rounds.filter(x =>
-              moment(x.first_day).isSame(new Date(schedule.first_day)) ||
-              moment(x.last_day).isSame(last_day) ||
-              moment(x.last_day).isSameOrAfter(new Date(schedule.first_day))
-              || x.status == 2)
-              .map(x => x.territory_id)
-  
-  
-          if (DataInRange.length > 0) {
-              console.log('Não foi possível seguir com o agendamento.')
-              throw new Error('O agendamento não pode ser concluído visto que esses territórios já possuem agendamento nessa mesma data. Territórios: ' + DataInRange.join(','));
-          }
-   */
-
-        const territorios_disponiveis = await this.getRoundsByRangeofDate(15)
-
-
-        if (!schedule.territories) return null;
-
-        console.log(territorios_disponiveis)
-
-        // pegar a partir de 15 dias
-
-
-        //criar uma lista de lista de retonos 
-
-        //criar método para pegar o primeiro território e verificar se os próximos territórios são proximos
-
-        // caso o proximo território for próximo adicione ele na lista 1
-
-        //caso não for proximo adicione ele na lista 2 e repita o processo para ele
-
-        // a primeira lista a ter mais de quantidade_minima_casas casas ja será retornada.
-
-
-        // Criar uma lista 
-
-    }
-
     async ToSchedule(schedule: ISchedule, leader_id: number) {
         let quantidade_minima_casas = schedule?.house_number ? schedule.house_number : 120;
+        let quantidade_minima_comercios = schedule?.business_number ? schedule.business_number : 100;
+
         try {
             let last_day: Date | null = moment(schedule.first_day).toDate();
 
@@ -228,7 +171,6 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
             if (!schedule.not_use_ia) {
                 console.log('Gerando agendamento com algoritmo...')
-                let territorios_disponiveis: IATerritoriesInfo[] = []
                 let gerado = false;
                 let days = 30;
                 let array_gerado: number[] = []
@@ -238,7 +180,10 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
                 while (!gerado && days >= 0 && tentativas < maxTentativas) {
                     console.log('🔍 Consultando com ' + days + ' dias');
-                    const { territorios_disponiveis, forCache: cache } = await this.getAvaliableTerritories(days, forCache);
+
+                    let fnGetAvaliableTerritories = schedule.is_business ? this.getAvailableTerritoriesBusiness : this.getAvaliableTerritories;
+
+                    const { territorios_disponiveis, forCache: cache } = await fnGetAvaliableTerritories(days, forCache);
                     forCache = cache;
 
                     if (territorios_disponiveis.length === 0) {
@@ -274,29 +219,56 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
                         console.log('Territórios próximos disponíveis com o território atual: ' + grupo_de_territorios_para_verificacao.map(x => x.id).join(','));
 
-                        const quantidade_casas_do_grupo = grupo_de_territorios_para_verificacao.reduce((acc, cur) => acc + (cur?.house_numbers ?? 0), 0);
+                        if (schedule.is_business) {
+                            const quantidade_comercios = grupo_de_territorios_para_verificacao.reduce((acc, cur) => acc + (cur?.business_numbers ?? 0), 0);
+                            console.log('Quantidade de comércios do grupo: ' + quantidade_comercios);
 
-                        console.log('Quantidade de casas do grupo: ' + quantidade_casas_do_grupo);
+                            if (quantidade_comercios < quantidade_minima_comercios) {
+                                console.log(`⚠️ Grupo de territórios do território ${territorio_atual?.id} não atingiu a quantidade mínima de ${quantidade_minima_comercios} comércios.`);
+                                tentativas++;
+                            } else {
+                                gerado = true;
+                                console.log(`✅ Grupo de territórios do território ${territorio_atual?.id} atingiu a quantidade mínima de ${quantidade_minima_comercios} comércios. Gerando agendamento...`);
+                                let contador_comercios_grupo = 0;
 
-                        if (quantidade_casas_do_grupo < quantidade_minima_casas) {
-                            console.log(`⚠️ Grupo de territórios do território ${territorio_atual?.id} não atingiu a quantidade mínima de ${quantidade_minima_casas} casas.`);
-                            tentativas++;
+                                grupo_de_territorios_para_verificacao.forEach(territorio => {
+                                    if (contador_comercios_grupo >= quantidade_minima_comercios) return;
+                                    console.log('Adicionando território: ' + territorio.id);
+                                    contador_comercios_grupo += territorio?.business_numbers ?? 0;
+                                    array_gerado.push(territorio.id);
+                                });
+                                break; // Sai do loop assim que um agendamento válido for encontrado
+
+                            }
+
                         } else {
-                            gerado = true;
-                            console.log(`✅ Grupo de territórios do território ${territorio_atual?.id} atingiu a quantidade mínima de ${quantidade_minima_casas} casas. Gerando agendamento...`);
+                            const quantidade_casas_do_grupo = grupo_de_territorios_para_verificacao.reduce((acc, cur) => acc + (cur?.house_numbers ?? 0), 0);
 
-                            let contador_casas_grupo = 0;
+                            console.log(`Quantidade de casas do grupo: ${quantidade_casas_do_grupo}`);
 
-                            grupo_de_territorios_para_verificacao.forEach(territorio => {
-                                if (contador_casas_grupo >= quantidade_minima_casas) return;
-                                console.log('Adicionando território: ' + territorio.id);
-                                contador_casas_grupo += territorio?.house_numbers ?? 0;
-                                array_gerado.push(territorio.id);
-                            });
+                            if (quantidade_casas_do_grupo < quantidade_minima_casas) {
+                                console.log(`⚠️ Grupo de territórios do território ${territorio_atual?.id} não atingiu a quantidade mínima de ${quantidade_minima_casas} casas.`);
+                                tentativas++;
+                            } else {
+                                gerado = true;
+                                console.log(`✅ Grupo de territórios do território ${territorio_atual?.id} atingiu a quantidade mínima de ${quantidade_minima_casas} casas. Gerando agendamento...`);
 
-                            console.log(`🎉 Agendamento gerado com ${days} dias com sucesso!`);
-                            break; // Sai do loop assim que um agendamento válido for encontrado
+                                let contador_casas_grupo = 0;
+
+                                grupo_de_territorios_para_verificacao.forEach(territorio => {
+                                    if (contador_casas_grupo >= quantidade_minima_casas) return;
+                                    console.log('Adicionando território: ' + territorio.id);
+                                    contador_casas_grupo += territorio?.house_numbers ?? 0;
+                                    array_gerado.push(territorio.id);
+                                });
+
+                                console.log(`🎉 Agendamento gerado com ${days} dias com sucesso!`);
+                                break; // Sai do loop assim que um agendamento válido for encontrado
+                            }
+
                         }
+
+
                     }
                     if (array_gerado.length == 0) days--;
                 }
@@ -314,12 +286,7 @@ export class RoundsService<T = Rounds> extends Database<T> {
                 return null;
             }
 
-
-
-
             const uuid = randomUUID()
-
-            console.log('uuid', uuid)
 
             const ToScheduleRounds = schedule.territories?.map(territory_id => {
                 const obj = {
@@ -329,7 +296,8 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     expected_return,
                     last_day,
                     status: 2,
-                    uid: uuid
+                    uid: uuid,
+                    is_business: schedule.is_business ? schedule.is_business : false
                 } as Rounds
                 if (schedule.campaign_id) {
                     obj.campaign = schedule.campaign_id
@@ -339,14 +307,25 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
             if (ToScheduleRounds && ToScheduleRounds.length > 0) {
                 console.log('Efetuando o agendamento...')
-                const territories_infos: ia_info_territory[] = await sql`	select t.id,vlj.last_schedule,t.house_numbers from vw_last_job vlj 
-                join territories t on vlj.territory_id = t.id where vlj.territory_id in ${sql(schedule.territories)} order by vlj.last_schedule`
+                let territories_infos: ia_info_territory[];
+                if (schedule.is_business) {
+                    territories_infos = await sql`	select t.id,vlj.last_day as last_schedule,t.house_numbers,t.business_numbers from territories t
+                    left join vw_last_job_business vlj  on vlj.territory_id = t.id where t.id in ${sql(schedule.territories)} order by vlj.last_day`
 
+
+                } else {
+                    territories_infos = await sql`	 select t.id,vlj.last_schedule ,t.house_numbers,t.business_numbers from territories t 
+                    left join vw_last_job vlj  on vlj.territory_id = t.id  where vlj.territory_id in ${sql(schedule.territories)} order by vlj.last_schedule`
+
+                    console.log('Territórios informações obtidas para agendamento residencial.')
+                    console.log(territories_infos)
+                }
                 const RoundsCreated: Rounds[] = await sql`insert into ${sql(this.table)} ${sql(ToScheduleRounds)} RETURNING *`
                 if (!!RoundsCreated) {
                     console.log(`${RoundsCreated?.length ?? 0} Territórios agendados a partir de ${moment(schedule.first_day).format("DD-MM-YYYY")} ✅ 🎉`)
 
-                    const quantity_house: any = territories_infos.reduce((acc, cur) => acc += cur?.house_numbers ?? 0, 0)
+                    const quantity_house: any = territories_infos.reduce((acc, cur) => acc += (cur?.house_numbers) ?? 0, 0)
+                    const quantity_business: any = territories_infos.reduce((acc, cur) => acc += (cur?.business_numbers) ?? 0, 0)
 
                     const day = moment(schedule.first_day).utc().format('dddd').toLowerCase().charAt(0).toUpperCase() + moment(schedule.first_day).utc().format('dddd').slice(1);
 
@@ -363,38 +342,43 @@ export class RoundsService<T = Rounds> extends Database<T> {
 
                     formattedData += `*Informações adicionais:*\n`;
 
+                    if (schedule.is_business) formattedData += `🗓️ • Agendamento Comercial\n`;
+                    else formattedData += `🏠 • Agendamento Residencial\n`
+
                     if (territories_infos.length > 0) {
+
                         territories_infos.filter(x => schedule.territories?.includes(x.id)).sort((a, b) => a.id - b.id).forEach(info => {
-                            formattedData += `🗓️ • T.${info.id} - Última vez trabalhado: *${moment(info.last_schedule).utc().format('DD-MM-YYYY')}*\n`;
+                            formattedData += `🗓️ • T.${info.id} - Última vez trabalhado: *${info.last_schedule ? moment(moment(info.last_schedule).utc().format('DD-MM-YYYY')) : 'Sem registro'}*\n`;
                         });
                     }
+                    if (schedule.is_business) formattedData += `\n*Quantidade de comércios:*\n 🏢 *${quantity_business}*\n`;
+                    else {
 
-                    formattedData += `\n*Quantidade de casas:*\n 🏘️ *${quantity_house}*\n`;
+                        formattedData += `\n*Quantidade de casas:*\n 🏘️ *${quantity_house}*\n`;
+                        const houses_not_allowed = await this.getInfoHouseNotAllowed(schedule.territories);
+                        if (houses_not_allowed.length > 0) {
+                            formattedData += `\n⚠️ *Atenção* ⚠️\n`;
+                            formattedData += `_Os seguintes casas não podem ser trabalhadas:_ \n\n`;
 
-                    const houses_not_allowed = await this.getInfoHouseNotAllowed(schedule.territories);
-                    if (houses_not_allowed.length > 0) {
-                        formattedData += `\n⚠️ *Atenção* ⚠️\n`;
-                        formattedData += `_Os seguintes casas não podem ser trabalhadas:_ \n\n`;
+                            // Agrupar casas por território
+                            const groupedHouses = houses_not_allowed.reduce((acc: any, x) => {
+                                if (!acc[x.territory_id]) acc[x.territory_id] = [];
+                                acc[x.territory_id].push(x);
+                                return acc;
+                            }, {});
 
-                        // Agrupar casas por território
-                        const groupedHouses = houses_not_allowed.reduce((acc: any, x) => {
-                            if (!acc[x.territory_id]) acc[x.territory_id] = [];
-                            acc[x.territory_id].push(x);
-                            return acc;
-                        }, {});
-
-                        // Iterar sobre cada território e suas casas
-                        Object.keys(groupedHouses).forEach(territoryId => {
-                            const territoryHouses = groupedHouses[territoryId] as vw_house_not_allowed[];
-                            formattedData += `*T.${territoryId} - ${territoryHouses[0].description || ''}:*\n\n`; // Usando o nome do território se disponível
-                            territoryHouses.forEach(house => {
-                                formattedData += `🚫 _Nº ${house.house_number ?? 'S/N'}${house.obs ? ` - *${house.obs}*` : ''}_ \n`;
+                            // Iterar sobre cada território e suas casas
+                            Object.keys(groupedHouses).forEach(territoryId => {
+                                const territoryHouses = groupedHouses[territoryId] as vw_house_not_allowed[];
+                                formattedData += `*T.${territoryId} - ${territoryHouses[0].description || ''}:*\n\n`; // Usando o nome do território se disponível
+                                territoryHouses.forEach(house => {
+                                    formattedData += `🚫 _Nº ${house.house_number ?? 'S/N'}${house.obs ? ` - *${house.obs}*` : ''}_ \n`;
+                                });
+                                formattedData += '\n';
                             });
-                            formattedData += '\n';
-                        });
+                        }
+
                     }
-
-
 
                     if (!leader_selected) throw new Error('Leader selecionado nao encontrado')
                     if (!leader_selected.telefone || !schedule.notificar_whatsapp) leader_selected.telefone = telefone_ph;
@@ -402,14 +386,14 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     const sended_start_info = await this.serviceWhatsapp.sendRoundInfoStartMessage(leader_selected.telefone, leader_selected?.name)
 
                     if (sended_start_info) {
-                        console.log('Mensagem de início enviada para o irmão... 📲📩')
+                        console.log('Mensagem de início enviada para o telefone: ' + leader_selected.telefone + '📲📩')
                         console.log('Enviando imagens...')
                         await new Promise(resolve => setTimeout(resolve, 1000));
                         const send_images = await this.serviceWhatsapp.sendMultipleImages(leader_selected.telefone, schedule.territories.sort((a, b) => a - b).map(territory_id => ({ url: `https://aitab.lanisystems.com.br/${territory_id}.png` })));
 
                         if (send_images) {
                             console.log('Imagens enviadas com sucesso! 📲📩')
-                            console.log('Enviando dados com o agendamento... 📲📩')
+                            console.log('Enviando dados com o agendamento...  🧾')
                             await new Promise(resolve => setTimeout(resolve, 1000));
                             const send_schedule = await this.serviceWhatsapp.sendMessage(leader_selected.telefone, formattedData)
 
@@ -453,6 +437,23 @@ export class RoundsService<T = Rounds> extends Database<T> {
         console.log('🎲 Cache vazio, consultando banco de dados...')
         const territorios_disponiveis_30_dias: ia_info_territory[] = await sql`	select t.id,vlj.last_schedule,t.house_numbers from vw_last_job vlj 
                 join territories t on vlj.territory_id = t.id where (current_date - vlj.last_schedule) >= 0 order by vlj.territory_id `
+
+        const territorios_disponiveis = territorios_disponiveis_30_dias.filter(x => (moment().diff(moment(x.last_schedule), 'days')) >= days)
+
+        return { territorios_disponiveis: territorios_disponiveis, forCache: territorios_disponiveis_30_dias };
+
+    }
+
+    async getAvailableTerritoriesBusiness(days: number, cachelist: ia_info_territory[]): Promise<{ territorios_disponiveis: ia_info_territory[]; forCache: ia_info_territory[] }> {
+
+        console.log(' Consultando territórios comerciais disponíveis com ' + days + ' dias...')
+        const territorios_disponiveis_30_dias: ia_info_territory[] = await sql`	select 	t.id,
+                                                                                vlj.last_day,
+                                                                                t.business_numbers 
+                                                                        from territories t 
+                                                                        left join vw_last_job_business vlj on vlj.territory_id = t.id and (current_date - vlj.last_day) >= 0 
+                                                                        where t.business_numbers > 0
+                                                                        order by t.id `
 
         const territorios_disponiveis = territorios_disponiveis_30_dias.filter(x => (moment().diff(moment(x.last_schedule), 'days')) >= days)
 

@@ -92,8 +92,10 @@ export default function TerritoryRoutes(server: FastifyInstance, territoryServic
     server.get(`${path}/getAvailableTerritories`, async (request, reply) => {
         await request.jwtVerify();
         const user = request.user as User;
+        const query = request.query as any;
+
         try {
-            const ret = await territoryService.getTerritoriesAvaliable();
+            const ret = await territoryService.getTerritoriesAvaliable(query?.isBusiness === 'true');
             return reply.status(200).send(ret);
         } catch (err) {
             await new UserLogService({ user_id: user.id!, action: 'get full territories list with fail.', origin: path }).log();

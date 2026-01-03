@@ -8,4 +8,6 @@ export interface Rounds {
     status: number; //fk de status_territory 
     territory_id: number;
     uid: string;
+    is_business?: boolean;
+
 }
