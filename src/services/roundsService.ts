@@ -343,12 +343,12 @@ export class RoundsService<T = Rounds> extends Database<T> {
                     formattedData += `*Informações adicionais:*\n`;
 
                     if (schedule.is_business) formattedData += `🗓️ • Agendamento Comercial\n`;
-                    else formattedData += `🏠 • Agendamento Residencial\n`
+                    else formattedData += `🏠 • Agendamento Residencial\n\n`
 
                     if (territories_infos.length > 0) {
 
                         territories_infos.filter(x => schedule.territories?.includes(x.id)).sort((a, b) => a.id - b.id).forEach(info => {
-                            formattedData += `🗓️ • T.${info.id} - Última vez trabalhado: *${info.last_schedule ? moment(moment(info.last_schedule).utc().format('DD-MM-YYYY')) : 'Sem registro'}*\n`;
+                            formattedData += `🗓️ • T.${info.id} - Última vez trabalhado: *${info.last_schedule ? moment(info.last_schedule).utc().format('DD-MM-YYYY') : 'Sem registro'}*\n`;
                         });
                     }
                     if (schedule.is_business) formattedData += `\n*Quantidade de comércios:*\n 🏢 *${quantity_business}*\n`;
